@@ -33,6 +33,19 @@ def test_speaker_fallback_markers(offline):
     assert offline.speaker("查询C0001的欠款").speaker == "operator"
 
 
+def test_speaker_sends_latest_round(db_conn, cfg):
+    seen = {}
+
+    def responder(system, user):
+        seen["user"] = user
+        return {"speaker": "customer", "confidence": 0.9}
+
+    u = Understander(GuardedLLM(FakeLLM(responder), db_conn), cfg)
+    result = u.speaker("可以先还一笔吗", recent=[{"role": "AI坐席", "text": "想了解一下您这边的还款打算。"}])
+    assert result.speaker == "customer" and result.method == "大模型"
+    assert "上一轮" in seen["user"] and "想了解一下您这边的还款打算" in seen["user"]
+
+
 def test_speaker_llm_and_low_confidence(db_conn, cfg):
     def responder(system, user):
         assert "任务代号：speaker" in system

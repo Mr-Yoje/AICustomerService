@@ -4,17 +4,29 @@
   "speaker": "agent",
   "speaker_method": "大模型",
   "system_intent": "合规检测",
-  "reply": "[合规拦截] 命中 R002（威胁，严重）：话术中不得含有威胁性表述；证据「我们就直接去你单位找领导，让你同事都知道你在外面欠钱」；处置：人工接管\n[合规拦截] 命中 R006（泄露隐私，严重）：不得向第三方泄露客户欠款信息；证据「让你同事都知道你在外面欠钱」；处置：人工接管\n建议改写：您好，您的还款已逾期，请于今天下午五点前处理。逾期可能影响您的个人征信，建议尽快还款，如有疑问请联系我们。",
-  "customer_id": "C0023",
+  "reply": "[合规拦截] 命中 R006（泄露隐私，严重）：不得向第三方泄露客户欠款信息；证据「你同事都知道你在外面欠钱」；处置：人工接管\n[合规拦截] 命中 R002（威胁，严重）：话术中不得含有威胁性表述；证据「我们就直接去你单位找领导，让你同事都知道你在外面欠钱」；处置：人工接管\n[合规拦截] 命中 R009（骚扰亲友，严重）：不得骚扰客户亲友进行催收；证据「让你同事都知道你在外面欠钱」；处置：人工接管\n建议改写：请只与客户本人沟通账单，不要提及他人的姓名和欠款。",
+  "usage": null,
+  "customer_id": "C**23",
   "hit_rules": [
+    "R006",
     "R002",
-    "R006"
+    "R009"
   ],
   "compliance": [
     {
       "checkpoint": "agent_speech",
       "passed": false,
       "hits": [
+        {
+          "rule_id": "R006",
+          "rule_type": "泄露隐私",
+          "rule_content": "不得向第三方泄露客户欠款信息",
+          "level": "严重",
+          "action": "人工接管",
+          "method": "关键词",
+          "evidence": "你同事都知道你在外面欠钱",
+          "confidence": 0.8
+        },
         {
           "rule_id": "R002",
           "rule_type": "威胁",
@@ -26,14 +38,14 @@
           "confidence": 0.95
         },
         {
-          "rule_id": "R006",
-          "rule_type": "泄露隐私",
-          "rule_content": "不得向第三方泄露客户欠款信息",
+          "rule_id": "R009",
+          "rule_type": "骚扰亲友",
+          "rule_content": "不得骚扰客户亲友进行催收",
           "level": "严重",
           "action": "人工接管",
           "method": "语义",
           "evidence": "让你同事都知道你在外面欠钱",
-          "confidence": 0.9
+          "confidence": 0.85
         }
       ],
       "block": true,
@@ -53,7 +65,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-6cfd55efcc",
+  "trace_id": "TR-bf60837dc0",
   "trace": [
     {
       "step": "route",
@@ -73,7 +85,7 @@
       "detail": {
         "loan_type": "现金贷",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },
@@ -83,19 +95,11 @@
       "status": "warn",
       "detail": {
         "hits": [
+          "R006",
           "R002",
-          "R006"
+          "R009"
         ],
         "degraded": false
-      },
-      "ms": 0
-    },
-    {
-      "step": "reply",
-      "name": "改写建议",
-      "status": "ok",
-      "detail": {
-        "source": "大模型"
       },
       "ms": 0
     }

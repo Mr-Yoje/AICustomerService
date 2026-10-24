@@ -4,8 +4,9 @@
   "speaker": "agent",
   "speaker_method": "大模型",
   "system_intent": "合规检测",
-  "reply": "[合规拦截] 命中 R001（辱骂，严重）：话术中不得含有辱骂性词汇；证据「老赖」；处置：人工接管\n建议改写：您好，您的借款已逾期，请尽快还款，以免影响个人征信。",
-  "customer_id": "C0013",
+  "reply": "[合规拦截] 命中 R001（辱骂，严重）：话术中不得含有辱骂性词汇；证据「老赖」；处置：人工接管\n建议改写：您好，您的借款已逾期，请尽快处理还款事宜，以免影响个人征信。",
+  "usage": null,
+  "customer_id": "C**13",
   "hit_rules": [
     "R001"
   ],
@@ -22,7 +23,7 @@
           "action": "人工接管",
           "method": "关键词",
           "evidence": "老赖",
-          "confidence": 1.0
+          "confidence": 0.8
         }
       ],
       "block": true,
@@ -42,7 +43,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-72f8bbeabe",
+  "trace_id": "TR-e6bbfb3712",
   "trace": [
     {
       "step": "route",
@@ -62,7 +63,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },

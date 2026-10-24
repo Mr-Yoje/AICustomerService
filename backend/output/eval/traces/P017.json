@@ -1,11 +1,12 @@
 {
-  "session_id": "S-9aa19c49",
+  "session_id": "S-5fa5447c",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "还款意愿评估",
-  "reply": "方案是标准分期6期，月供2539.52元；标准分期6期，月供2552.76元；一次性结清减免1期，月供15000.00元，还款时间下个月。请确认是否按这个方案和时间还款。",
-  "customer_id": "C0024",
+  "reply": "理解您现在的压力，您说的三千元先还、剩余下月再谈的想法我已记录，宽限申请已登记。您已表达还款意愿，但需说明我无法承诺减免全部利息或未经审批的减免，可先提交申请、以审批为准。推荐标准分期6期，月供**元，年化利率5.40%，手续费**元，总成本**元；逾期已88天，继续增加会影响信用。您看这个方案方便了解吗？",
+  "usage": null,
+  "customer_id": "C**24",
   "hit_rules": [],
   "compliance": [
     {
@@ -31,11 +32,12 @@
   "key_points": [
     "客户意图：要求宽限",
     "情绪：焦虑（强度0.60）",
-    "推荐方案：T003 标准分期 6期，月供2539.52元",
-    "还款意愿：71分（高）",
+    "推荐方案：T003 标准分期 6期，月供**元",
+    "识别置信度：0.8",
+    "还款意愿：71分（高，置信度1.0）",
     "建议策略：协商分期"
   ],
-  "trace_id": "TR-c2eaa6dea9",
+  "trace_id": "TR-11aeb84195",
   "trace": [
     {
       "step": "route",
@@ -55,7 +57,7 @@
       "detail": {
         "loan_type": "装修贷",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },
@@ -68,17 +70,17 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0024"
+          "customer_id": "C**24"
         },
         "output": {
-          "customer_id": "C0024",
+          "customer_id": "C**24",
           "profile": {
-            "customer_id": "C0024",
-            "customer_name": "客户0024",
-            "age": 44,
-            "occupation": "个体经营",
-            "monthly_income": 9800.0,
-            "credit_score": 585,
+            "customer_id": "C**24",
+            "customer_name": "**",
+            "age": "**",
+            "occupation": "**",
+            "monthly_income": "**",
+            "credit_score": "**",
             "region": "华中",
             "customer_level": "C"
           },
@@ -87,7 +89,7 @@
               "behavior_id": "B0056",
               "behavior_type": "部分还款",
               "behavior_time": "2025-10-12 11:28",
-              "behavior_detail": "客户通过APP主动还款1500元",
+              "behavior_detail": "客户通过APP主动还款**元",
               "source": "原始导入"
             },
             {
@@ -108,7 +110,7 @@
               "behavior_id": "B0053",
               "behavior_type": "部分还款",
               "behavior_time": "2025-06-15 10:35",
-              "behavior_detail": "客户通过APP主动还款2000元",
+              "behavior_detail": "客户通过APP主动还款**元",
               "source": "原始导入"
             }
           ],
@@ -182,10 +184,10 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0024"
+          "customer_id": "C**24"
         },
         "output": {
-          "customer_id": "C0024",
+          "customer_id": "C**24",
           "items": [
             {
               "overdue_id": "O0053",
@@ -233,7 +235,7 @@
             }
           ],
           "total_amount": 15000.0,
-          "suggestion": "建议优先处理 O0053（装修贷，逾期88天，欠款9000元）",
+          "suggestion": "建议优先处理 O0053（装修贷，逾期88天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": []
         }
@@ -249,11 +251,11 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0024",
+          "customer_id": "C**24",
           "day": "2026-10-24"
         },
         "output": {
-          "customer_id": "C0024",
+          "customer_id": "C**24",
           "day": "2026-10-24",
           "count": 0
         }
@@ -269,10 +271,10 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0024"
+          "customer_id": "C**24"
         },
         "output": {
-          "customer_id": "C0024",
+          "customer_id": "C**24",
           "score": 71,
           "level": "高",
           "factors": [
@@ -300,7 +302,7 @@
                 "O0055",
                 "O0056"
               ],
-              "note": "最长逾期88天，总欠款15000元，为月收入的1.53倍"
+              "note": "最长逾期88天，总欠款**元，为月收入的1.53倍"
             },
             {
               "name": "行为信号",
@@ -348,9 +350,9 @@
               "weight": 0.15,
               "contribution": 7.18,
               "evidence": [
-                "C0024"
+                "C**24"
               ],
-              "note": "信用评分585，客户等级C"
+              "note": "信用评分**，客户等级C"
             }
           ],
           "adjustments": [],
@@ -359,7 +361,7 @@
           "review_reasons": []
         }
       },
-      "ms": 0
+      "ms": 1
     },
     {
       "step": "route",
@@ -368,7 +370,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-9aa19c49"
+        "session_id": "S-5fa5447c"
       },
       "ms": 0
     },
@@ -400,7 +402,7 @@
           "method": "大模型"
         }
       },
-      "ms": 768
+      "ms": 957
     },
     {
       "step": "understand",
@@ -474,7 +476,7 @@
           "lump_sum": false
         },
         "output": {
-          "customer_id": "C0024",
+          "customer_id": "C**24",
           "principal": 15000.0,
           "overdue_ids": [
             "O0053",
@@ -483,7 +485,7 @@
             "O0056"
           ],
           "max_overdue_days": 88,
-          "credit_score": 585,
+          "credit_score": "**",
           "affordable_monthly": 3000.0,
           "affordability_source": "客户表述",
           "eligible_templates": [
@@ -547,101 +549,7 @@
       "name": "willingness_update",
       "status": "ok",
       "detail": {
-        "owner": "collection:consumer_finance",
-        "kind": "skill",
-        "attempt": 1,
-        "input": {
-          "intents": [
-            "要求宽限"
-          ]
-        },
-        "output": {
-          "customer_id": "C0024",
-          "score": 71,
-          "level": "高",
-          "factors": [
-            {
-              "name": "还款履约",
-              "score": 75.0,
-              "weight": 0.25,
-              "contribution": 18.75,
-              "evidence": [
-                "RP0053",
-                "RP0054",
-                "RP0055",
-                "RP0056"
-              ],
-              "note": "按时还款3/4次"
-            },
-            {
-              "name": "逾期严重度",
-              "score": 49.7,
-              "weight": 0.2,
-              "contribution": 9.94,
-              "evidence": [
-                "O0053",
-                "O0054",
-                "O0055",
-                "O0056"
-              ],
-              "note": "最长逾期88天，总欠款15000元，为月收入的1.53倍"
-            },
-            {
-              "name": "行为信号",
-              "score": 90.0,
-              "weight": 0.15,
-              "contribution": 13.5,
-              "evidence": [
-                "B0053",
-                "B0054",
-                "B0055",
-                "B0056"
-              ],
-              "note": "正向4条，负向0条"
-            },
-            {
-              "name": "历史催收结果",
-              "score": 100.0,
-              "weight": 0.15,
-              "contribution": 15.0,
-              "evidence": [
-                "CH0066",
-                "CH0067",
-                "CH0068",
-                "CH0069",
-                "CH0070"
-              ],
-              "note": "正向5条，负向0条"
-            },
-            {
-              "name": "情绪",
-              "score": 71.1,
-              "weight": 0.1,
-              "contribution": 7.11,
-              "evidence": [
-                "E0056",
-                "E0055",
-                "E0054",
-                "E0053"
-              ],
-              "note": "配合(0.88)、焦虑(0.58)、配合(0.81)、羞愧(0.63)"
-            },
-            {
-              "name": "信用画像",
-              "score": 47.9,
-              "weight": 0.15,
-              "contribution": 7.18,
-              "evidence": [
-                "C0024"
-              ],
-              "note": "信用评分585，客户等级C"
-            }
-          ],
-          "adjustments": [],
-          "confidence": 1.0,
-          "needs_review": false,
-          "review_reasons": []
-        }
+        "source": "前置工具"
       },
       "ms": 0
     },
@@ -661,7 +569,7 @@
             "客户说": "我现在只能凑出三千块，先还这些行不行？剩下的能不能下个月再说？",
             "客户情绪": "焦虑（0.60）",
             "事实": {
-              "欠款总额": "15000元",
+              "欠款总额": "**元",
               "逾期笔数": 4,
               "最长逾期": "88天",
               "分期方案": [
@@ -669,37 +577,38 @@
                   "模板": "T003",
                   "类型": "标准分期",
                   "期数": 6,
-                  "月供": "2539.52元",
+                  "月供": "**元",
                   "年化利率": "5.40%",
-                  "手续费": "150.00元",
-                  "总成本": "15387.13元",
+                  "手续费": "**元",
+                  "总成本": "**元",
                   "说明": ""
                 },
                 {
                   "模板": "T004",
                   "类型": "标准分期",
                   "期数": 6,
-                  "月供": "2552.76元",
+                  "月供": "**元",
                   "年化利率": "7.20%",
-                  "手续费": "225.00元",
-                  "总成本": "15541.57元",
+                  "手续费": "**元",
+                  "总成本": "**元",
                   "说明": ""
                 },
                 {
                   "模板": "T006",
                   "类型": "一次性结清减免",
                   "期数": 1,
-                  "月供": "15000.00元",
+                  "月供": "**元",
                   "年化利率": "0.00%",
-                  "手续费": "0.00元",
-                  "总成本": "15000.00元",
+                  "手续费": "**元",
+                  "总成本": "**元",
                   "说明": "一次性结清可申请减免违约金，需审批，不承诺结果"
                 }
               ],
               "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取",
               "宽限请求": "已记录",
+              "还款意愿": "71分（高，置信度1.0）",
               "还款意愿等级": "高",
-              "可承受金额": "3000元",
+              "可承受金额": "**元",
               "还款时间": "下个月"
             },
             "对话摘要": "",
@@ -708,21 +617,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "理解您现在的压力，您说先还三千、剩下的下个月再说，这个宽限申请我已经记录。您预计哪天发工资呢？另外，您已有可承受金额，我直接为您推荐方案：标准分期6期，月供2539.52元，年化利率5.40%，手续费150.00元，总成本15387.13元；或6期月供2552.76元，年化利率7.20%，手续费225.00元，总成本15541.57元。逾期已88天，天数继续增加会影响信用，方便了解一下吗？",
+          "reply": "理解您现在的压力，您说的三千元先还、剩余下月再谈的想法我已记录，宽限申请已登记。您已表达还款意愿，但需说明我无法承诺减免全部利息或未经审批的减免，可先提交申请、以审批为准。推荐标准分期6期，月供**元，年化利率5.40%，手续费**元，总成本**元；逾期已88天，继续增加会影响信用。您看这个方案方便了解吗？",
           "source": "大模型"
         }
       },
-      "ms": 1141
-    },
-    {
-      "step": "guard",
-      "name": "检查点一：坐席话术",
-      "status": "ok",
-      "detail": {
-        "hits": [],
-        "degraded": false
-      },
-      "ms": 0
+      "ms": 1402
     },
     {
       "step": "guard",

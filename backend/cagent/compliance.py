@@ -6,6 +6,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
+from .catalog import list_effective
 from .clock import in_quiet_hours, next_allowed_time
 from .llm import GuardedLLM, LLMError
 
@@ -56,10 +57,9 @@ class ComplianceEngine:
         self.version = version
         self.llm = llm
         self.negations = cfg.get("negations", [])
-        self.rules = {r["rule_id"]: dict(r) for r in conn.execute(
-            "SELECT rule_id, rule_type, rule_content, violation_level, action FROM dim_compliance_rule")}
+        self.rules = {r["rule_id"]: r for r in list_effective(conn, "dim_compliance_rule", "rule_id")}
 
-    def _hit(self, rule: dict, checkpoint: str, method: str, evidence: str, confidence: float = 1.0) -> RuleHit:
+    def _hit(self, rule: dict, checkpoint: str, method: str, evidence: str, confidence: float = 0.8) -> RuleHit:
         overrides = self.cfg["checkpoints"][checkpoint].get("action_overrides") or {}
         return RuleHit(rule_id=rule["rule_id"], rule_type=rule["rule_type"], rule_content=rule["rule_content"],
                        level=rule["violation_level"], action=overrides.get(rule["rule_id"], rule["action"]),

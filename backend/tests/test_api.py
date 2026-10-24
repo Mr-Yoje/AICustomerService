@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime
 
 import pytest
@@ -44,6 +45,31 @@ def _kinds(events):
         if not out or out[-1] != k:
             out.append(k)
     return out
+
+
+def test_chat_done_sums_llm_usage_for_the_reply(client, service, db_conn):
+    original = service.agent.handle
+
+    def wrapped(*args, **kwargs):
+        db_conn.execute(
+            "INSERT INTO llm_calls(ts, purpose, masked_input, masked_output, status, latency_ms, "
+            "prompt_tokens, completion_tokens, cache_hit_tokens, cache_miss_tokens) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (NOW, "narrate", "", "", "ok", 1, 120, 30, 80, 40),
+        )
+        db_conn.commit()
+        return original(*args, **kwargs)
+
+    service.agent.handle = wrapped
+    try:
+        done = chat(client, text="能不能分12期", role="customer", customer_id="C0003")[-1][1]
+    finally:
+        service.agent.handle = original
+    assert done["usage"] == {"prompt_tokens": 120, "completion_tokens": 30, "cache_hit_tokens": 80}
+    msgs = client.get(f"/api/sessions/{done['session_id']}").json()["messages"]
+    ai = [m for m in msgs if m["role"] == "AI坐席"][-1]
+    assert ai["meta"]["usage"] == done["usage"]
+    assert chat(client, text="查询C0001的欠款")[-1][1]["usage"] is None
 
 
 def test_chat_operator_query_streams_trace_delta_done(client):
@@ -198,6 +224,79 @@ def test_business_pack_validation_and_copy(client):
                        json={"new_key": "car_insurance", "name": "重复"}).status_code == 409
 
 
+def test_registry_config_save_applies_and_rejects_unknown(client):
+    doc = client.get("/api/config/registry/default").json()
+    names = {i["name"] for i in doc["content"]["items"]}
+    assert "get_overdues" in names and "installment_plan" in names
+    edited = doc["content"]
+    row = next(i for i in edited["items"] if i["name"] == "get_overdues")
+    row["timeout_s"] = 9
+    row["description"] = "逾期优先级（测试）"
+    saved = client.put("/api/config/registry/default", json={"content": edited}).json()
+    assert saved["version"] != doc["version"]
+    groups = {g["owner"]: g["items"] for g in client.get("/api/registry").json()}
+    item = next(i for i in groups["ops"] if i["name"] == "get_overdues")
+    assert item["timeout_s"] == 9 and item["description"] == "逾期优先级（测试）" and item["enabled"] is True
+    edited["items"].append({"name": "no_such", "owner": "ops", "kind": "tool", "description": "x",
+                            "timeout_s": 1, "retries": 0, "enabled": True})
+    resp = client.put("/api/config/registry/default", json={"content": edited})
+    assert resp.status_code == 422 and any("no_such" in e for e in resp.json()["detail"]["errors"])
+
+
+def test_edit_rule_and_template_overlay_raw_rows(client, service, db_conn):
+    rule = next(r for r in client.get("/api/rules").json() if r["rule_id"] == "R001")
+    original = rule["rule_content"]
+    saved = client.put("/api/rules/R001", json={
+        "rule_type": rule["rule_type"], "rule_content": "测试改写后的规则内容",
+        "violation_level": "严重", "action": rule["action"],
+    })
+    assert saved.status_code == 200 and saved.json()["rule_content"] == "测试改写后的规则内容"
+    listed = next(r for r in client.get("/api/rules").json() if r["rule_id"] == "R001")
+    assert listed["rule_content"] == "测试改写后的规则内容" and listed["checkpoints"] == rule["checkpoints"]
+    rows = db_conn.execute("SELECT source, rule_content FROM dim_compliance_rule WHERE rule_id='R001'").fetchall()
+    assert any(r["source"] == "原始导入" and r["rule_content"] == original for r in rows)
+    assert sum(r["source"] == "系统生成" for r in rows) == 1
+    assert service.agent.engine.rules["R001"]["rule_content"] == "测试改写后的规则内容"
+    again = client.put("/api/rules/R001", json={
+        "rule_type": rule["rule_type"], "rule_content": "第二次改写",
+        "violation_level": "轻微", "action": rule["action"],
+    })
+    assert again.status_code == 200
+    rows = db_conn.execute("SELECT source FROM dim_compliance_rule WHERE rule_id='R001'").fetchall()
+    assert sum(r["source"] == "系统生成" for r in rows) == 1
+    bad = client.put("/api/rules/R001", json={
+        "rule_type": rule["rule_type"], "rule_content": "x", "violation_level": "特别严重", "action": rule["action"],
+    })
+    assert bad.status_code == 422 and any("级别" in e for e in bad.json()["detail"]["errors"])
+    assert client.put("/api/rules/R999", json={
+        "rule_type": "自定义", "rule_content": "不存在", "violation_level": "轻微", "action": "记录",
+    }).status_code == 404
+    created = client.post("/api/rules", json={
+        "rule_id": "R099", "rule_type": "自定义", "rule_content": "新增规则",
+        "violation_level": "轻微", "action": "记录",
+    })
+    assert created.status_code == 200 and created.json()["rule_id"] == "R099"
+    assert client.post("/api/rules", json={
+        "rule_id": "R099", "rule_type": "自定义", "rule_content": "新增规则",
+        "violation_level": "轻微", "action": "记录",
+    }).status_code == 409
+
+    template = client.get("/api/templates").json()[0]
+    tid = template["template_id"]
+    saved_t = client.put(f"/api/templates/{tid}", json={
+        "template_type": template["template_type"], "max_periods": 24,
+        "rate": 0.08, "fee": template["fee"], "condition": "逾期≤10天",
+    })
+    assert saved_t.status_code == 200
+    body = saved_t.json()
+    assert body["max_periods"] == 24 and body["cond"]["max_days"] == 10 and body["rate"] == 0.08
+    again_t = [t for t in client.get("/api/templates").json() if t["template_id"] == tid]
+    assert len(again_t) == 1 and again_t[0]["rate"] == 0.08
+    raw = db_conn.execute(
+        "SELECT source, max_periods FROM dim_installment_template WHERE template_id=?", (tid,)).fetchall()
+    assert any(r["source"] == "原始导入" and r["max_periods"] != 24 for r in raw)
+
+
 def test_readonly_rules_templates_registry(client):
     rules = client.get("/api/rules").json()
     r004 = next(r for r in rules if r["rule_id"] == "R004")
@@ -221,6 +320,20 @@ def test_spa_fallback(service, tmp_path):
     assert c.get("/assets/a.js").text == "console.log(1)"
     assert c.get("/api/nope").status_code == 404
     assert c.get("/api/customers").status_code == 200
+
+
+def test_request_trace_id_reaches_done_and_logs(client, caplog):
+    caplog.set_level(logging.INFO, logger="cagent")
+    resp = client.post("/api/chat", json={"now": NOW, "text": "查询C0001的欠款"},
+                       headers={"X-Trace-Id": "TR-abc1234567"})
+    assert resp.status_code == 200
+    assert resp.headers["x-trace-id"] == "TR-abc1234567"
+    done = sse(resp)[-1][1]
+    assert done["trace_id"] == "TR-abc1234567"
+    assert any(getattr(record, "trace_id", None) == "TR-abc1234567" and "/api/chat" in record.message
+               for record in caplog.records)
+    other = client.get("/api/sessions", headers={"X-Trace-Id": "not-a-trace"})
+    assert other.headers["x-trace-id"].startswith("TR-") and other.headers["x-trace-id"] != "not-a-trace"
 
 
 def test_chat_error_event(client, service, monkeypatch):

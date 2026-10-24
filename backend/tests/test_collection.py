@@ -11,6 +11,7 @@ from cagent.config_center import ConfigCenter
 from cagent.llm import FakeLLM, GuardedLLM
 from cagent.loans import prioritize
 from cagent.memory import MemoryStore
+from cagent.registry import CallError
 from cagent.trace import Trace
 
 NOW = datetime(2026, 10, 24, 10, 0)
@@ -82,7 +83,20 @@ def test_installment_negotiation_multi_turn(db_conn):
 def test_multi_loan_priority(db_conn):
     out = make_agent(db_conn, pack_id="consumer_finance", customer_id="C0001").handle("我到底有几笔欠款？", NOW, Trace())
     assert out.system_intent == "多贷款管理" and out.loans.items[0].overdue_id == "O0033"
-    assert "5笔" in out.reply
+    assert "5笔" in out.reply and "合计" in out.reply and "风险" in out.reply
+    assert "优先" in (out.strategy or "")
+
+
+def test_complaint_handoff_starts_with_apology(db_conn):
+    def responder(system, user):
+        purpose = system.splitlines()[0].removeprefix("任务代号：")
+        if purpose == "understand":
+            return {"customer_intent": "投诉", "emotion": "愤怒", "emotion_intensity": 0.9, "confidence": 0.9}
+        return {"hits": []}
+
+    out = make_agent(db_conn, llm_client=FakeLLM(responder)).handle(
+        "我已经打12378投诉你们了，一天打我四次电话，你们就等着挨罚吧！", NOW, Trace())
+    assert out.handoff and out.reply.startswith("非常抱歉") and "转接人工" in out.reply
 
 
 def test_emotion_and_stop_contact_hands_off(db_conn):
@@ -138,6 +152,47 @@ def test_draft_violation_rewritten(db_conn):
     assert out.reply == "可以为您办理分期，请问每月大概能还多少？"
     assert [c.passed for c in out.compliance] == [False, True]
     assert out.compliance[0].hits[0].rule_id == "R008" and not out.handoff
+
+
+def test_opening_reads_customer_promise(db_conn):
+    agent = make_agent(db_conn)
+    agent.memory.set("customer", "C0003", "open_promises", [{"amount": 3000, "date": "2026-11-01"}], "测试")
+    out = agent.opening(NOW, Trace())
+    assert "2026-11-01" in out.reply and "3000" in out.reply
+
+
+def test_first_turn_uses_prepared_willingness(db_conn):
+    from cagent.scoring import score_customer
+
+    agent = make_agent(db_conn)
+    data = score_customer(db_conn, "C0003", agent.policy).model_dump(mode="json")
+    data["score"] = 42
+    agent.snapshot.willingness = data
+    called = []
+    orig = agent.registry.call
+
+    def wrapped(name, trace, **kw):
+        called.append(name)
+        return orig(name, trace, **kw)
+
+    agent.registry.call = wrapped
+    out = agent.handle("你好", NOW, Trace())
+    assert out.willingness.score == 42 and "willingness_update" not in called
+    assert "42分" in str(agent._facts(None, None, out.willingness)["还款意愿"])
+
+
+def test_reply_timeout_is_told_to_customer(db_conn):
+    agent = make_agent(db_conn)
+    orig = agent.registry.call
+
+    def wrapped(name, trace, **kw):
+        if name == "generate_reply":
+            raise CallError(name, "超时（>40s）")
+        return orig(name, trace, **kw)
+
+    agent.registry.call = wrapped
+    out = agent.handle("你好", NOW, Trace())
+    assert out.reply.startswith("话术生成超时")
 
 
 def test_severe_or_pack_rule_forces_handoff(db_conn):

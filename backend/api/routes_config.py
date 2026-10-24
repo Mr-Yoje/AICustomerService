@@ -8,7 +8,8 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from cagent.agents.collection import CollectionAgent
-from cagent.config_center import SINGLETON_KINDS, ConfigError
+from cagent.catalog import create_row, list_effective, rule_errors, save_overlay, template_errors
+from cagent.config_center import SINGLETON_KINDS, ConfigError, validate_registry
 from cagent.installment import load_templates
 
 router = APIRouter(prefix="/api", tags=["配置"])
@@ -66,6 +67,29 @@ class TemplateRow(BaseModel):
 class RegistryGroup(BaseModel):
     owner: str
     items: list[dict[str, Any]]
+
+
+class RuleIn(BaseModel):
+    rule_type: str
+    rule_content: str
+    violation_level: str
+    action: str
+
+
+class RuleCreate(RuleIn):
+    rule_id: str
+
+
+class TemplateIn(BaseModel):
+    template_type: str
+    max_periods: int
+    rate: float
+    fee: float
+    condition: str
+
+
+class TemplateCreate(TemplateIn):
+    template_id: str
 
 
 def _svc(request: Request):
@@ -148,15 +172,57 @@ def copy_pack(key: str, body: CopyIn, request: Request) -> ConfigDoc:
         return _save_pack(svc, body.new_key, pack)
 
 
+def _rule_rows(svc) -> list[RuleRow]:
+    checkpoints = svc.agent.cc.get("checkpoints")[0]["checkpoints"]
+    rows = list_effective(svc.agent.conn, "dim_compliance_rule", "rule_id")
+    return [RuleRow(**r, checkpoints=[cp["name"] for cp in checkpoints.values()
+                                      if r["rule_id"] in cp.get("rules", [])]) for r in rows]
+
+
+def _reject(errors: list[str]) -> None:
+    if errors:
+        raise HTTPException(422, {"errors": errors})
+
+
+def _rule_fields(body: RuleIn) -> dict:
+    data = {k: v.strip() for k, v in body.model_dump().items() if k != "rule_id"}
+    _reject(rule_errors(data))
+    return data
+
+
 @router.get("/rules")
 def list_rules(request: Request) -> list[RuleRow]:
     svc = _svc(request)
     with svc.lock:
-        checkpoints = svc.agent.cc.get("checkpoints")[0]["checkpoints"]
-        rows = svc.agent.conn.execute("SELECT rule_id, rule_type, rule_content, violation_level, action "
-                                      "FROM dim_compliance_rule ORDER BY rule_id").fetchall()
-    return [RuleRow(**dict(r), checkpoints=[cp["name"] for cp in checkpoints.values()
-                                            if r["rule_id"] in cp.get("rules", [])]) for r in rows]
+        return _rule_rows(svc)
+
+
+@router.put("/rules/{rule_id}", responses={422: {"description": "校验失败，detail.errors 为错误清单"}})
+def save_rule(rule_id: str, body: RuleIn, request: Request) -> RuleRow:
+    svc = _svc(request)
+    fields = _rule_fields(body)
+    with svc.lock:
+        try:
+            save_overlay(svc.agent.conn, "dim_compliance_rule", "rule_id", rule_id, fields)
+        except KeyError:
+            raise HTTPException(404, f"规则不存在: {rule_id}") from None
+        svc.agent.reload()
+        return next(r for r in _rule_rows(svc) if r.rule_id == rule_id)
+
+
+@router.post("/rules", responses={422: {"description": "校验失败，detail.errors 为错误清单"}})
+def create_rule(body: RuleCreate, request: Request) -> RuleRow:
+    svc = _svc(request)
+    fields = _rule_fields(body)
+    rule_id = body.rule_id.strip()
+    _reject(rule_errors(fields, rule_id=rule_id))
+    with svc.lock:
+        try:
+            create_row(svc.agent.conn, "dim_compliance_rule", "rule_id", {"rule_id": rule_id, **fields})
+        except FileExistsError:
+            raise HTTPException(409, f"规则已存在: {rule_id}") from None
+        svc.agent.reload()
+        return next(r for r in _rule_rows(svc) if r.rule_id == rule_id)
 
 
 @router.get("/templates")
@@ -166,17 +232,67 @@ def list_templates(request: Request) -> list[TemplateRow]:
         return [TemplateRow(**t) for t in load_templates(svc.agent.conn)]
 
 
+def _template_fields(body: TemplateIn) -> dict:
+    data = body.model_dump()
+    data["template_type"] = data["template_type"].strip()
+    data["condition"] = data["condition"].strip()
+    _reject(template_errors(data))
+    return data
+
+
+@router.put("/templates/{template_id}", responses={422: {"description": "校验失败，detail.errors 为错误清单"}})
+def save_template(template_id: str, body: TemplateIn, request: Request) -> TemplateRow:
+    svc = _svc(request)
+    fields = _template_fields(body)
+    with svc.lock:
+        try:
+            save_overlay(svc.agent.conn, "dim_installment_template", "template_id", template_id, fields)
+        except KeyError:
+            raise HTTPException(404, f"分期模板不存在: {template_id}") from None
+        return TemplateRow(**next(t for t in load_templates(svc.agent.conn) if t["template_id"] == template_id))
+
+
+@router.post("/templates", responses={422: {"description": "校验失败，detail.errors 为错误清单"}})
+def create_template(body: TemplateCreate, request: Request) -> TemplateRow:
+    svc = _svc(request)
+    fields = _template_fields(body)
+    template_id = body.template_id.strip()
+    _reject(template_errors(fields, template_id=template_id))
+    with svc.lock:
+        try:
+            create_row(svc.agent.conn, "dim_installment_template", "template_id",
+                       {"template_id": template_id, **fields})
+        except FileExistsError:
+            raise HTTPException(409, f"分期模板已存在: {template_id}") from None
+        return TemplateRow(**next(t for t in load_templates(svc.agent.conn) if t["template_id"] == template_id))
+    svc = _svc(request)
+    agent = svc.agent
+def _registry_known(agent) -> dict[str, tuple[str, str]]:
+    known: dict[str, tuple[str, str]] = {}
+    for group in _registry_groups(agent):
+        owner = "collection" if group.owner.startswith("collection:") else group.owner
+        for item in group.items:
+            known.setdefault(item["name"], (owner, item["kind"]))
+    return known
+
+
+def _registry_groups(agent) -> list[RegistryGroup]:
+    cfg = agent.registry_items()
+    groups = [
+        RegistryGroup(owner="main", items=agent.registry.describe()),
+        RegistryGroup(owner="ops", items=agent.ops.registry.describe()),
+    ]
+    for pid in agent.cc.pack_ids():
+        pack = agent.cc.get("business_pack", pid)[0]
+        groups.append(RegistryGroup(
+            owner=f"collection:{pid}",
+            items=CollectionAgent.describe_registry(pack, agent.conn, agent.policy, cfg),
+        ))
+    return groups
+
+
 @router.get("/registry")
 def registry(request: Request) -> list[RegistryGroup]:
     svc = _svc(request)
-    agent = svc.agent
     with svc.lock:
-        groups = [
-            RegistryGroup(owner="main", items=agent.registry.describe()),
-            RegistryGroup(owner="ops", items=agent.ops.registry.describe()),
-        ]
-        for pid in agent.cc.pack_ids():
-            pack = agent.cc.get("business_pack", pid)[0]
-            groups.append(RegistryGroup(owner=f"collection:{pid}",
-                                        items=CollectionAgent.describe_registry(pack, agent.conn, agent.policy)))
-    return groups
+        return _registry_groups(svc.agent)

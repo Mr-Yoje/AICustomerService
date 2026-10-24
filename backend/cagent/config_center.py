@@ -8,7 +8,7 @@ from pathlib import Path
 
 import yaml
 
-SINGLETON_KINDS = ("llm", "checkpoints", "policy", "intents", "main_agent")
+SINGLETON_KINDS = ("llm", "checkpoints", "policy", "intents", "main_agent", "registry")
 REQUIRED_PACK_KEYS = ("pack_id", "name", "match", "pre_tools", "gates", "stages", "stage_advance", "intent_actions",
                       "skill_params", "handoff", "speech", "post_tasks")
 
@@ -66,6 +66,51 @@ class ConfigCenter:
     def pack_ids(self) -> list[str]:
         rows = self.conn.execute("SELECT DISTINCT key FROM config_versions WHERE kind='business_pack'")
         return sorted(r["key"] for r in rows)
+
+
+def registry_overrides(content: dict | None) -> dict[str, dict]:
+    if not content:
+        return {}
+    return {item["name"]: item for item in content.get("items") or [] if isinstance(item, dict) and item.get("name")}
+
+
+def validate_registry(content: dict, known: dict[str, tuple[str, str]]) -> list[str]:
+    """known 为代码里实际注册的名称到（归属, 类别）。归属对催收子 Agent 用 collection，不带业务包编号。"""
+    items = content.get("items")
+    if not isinstance(items, list):
+        return ["items 必须是列表"]
+    errors: list[str] = []
+    seen: list[str] = []
+    for i, item in enumerate(items, start=1):
+        if not isinstance(item, dict):
+            errors.append(f"第 {i} 项不是对象")
+            continue
+        name = item.get("name")
+        if name not in known:
+            errors.append(f"工具不存在: {name}")
+            continue
+        seen.append(name)
+        owner, kind = known[name]
+        if item.get("owner") != owner:
+            errors.append(f"{name} 的归属不能改")
+        if item.get("kind") != kind:
+            errors.append(f"{name} 的类别不能改")
+        if not isinstance(item.get("description"), str) or not item["description"].strip():
+            errors.append(f"{name} 缺少说明")
+        timeout = item.get("timeout_s")
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
+            errors.append(f"{name} 的超时必须是正数")
+        retries = item.get("retries")
+        if isinstance(retries, bool) or not isinstance(retries, int) or retries < 0:
+            errors.append(f"{name} 的重试次数必须是非负整数")
+        if not isinstance(item.get("enabled"), bool):
+            errors.append(f"{name} 的启用标记必须是布尔值")
+    if len(seen) != len(set(seen)):
+        errors.append("工具名称重复")
+    missing = sorted(set(known) - set(seen))
+    if missing:
+        errors.append("缺少工具: " + "、".join(missing))
+    return errors
 
 
 def validate_pack(pack: dict, *, main_tools: set[str], collection_actions: set[str], rule_ids: set[str],

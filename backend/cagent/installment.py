@@ -5,6 +5,8 @@ import sqlite3
 
 from pydantic import BaseModel
 
+from .catalog import list_effective
+
 METHOD = "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取"
 
 
@@ -19,9 +21,8 @@ def parse_condition(text: str) -> dict:
 
 
 def load_templates(conn: sqlite3.Connection) -> list[dict]:
-    rows = conn.execute('SELECT template_id, template_type, max_periods, rate, fee, "condition" '
-                        'FROM dim_installment_template ORDER BY template_id')
-    return [{**dict(r), "cond": parse_condition(r["condition"])} for r in rows]
+    rows = list_effective(conn, "dim_installment_template", "template_id")
+    return [{**r, "cond": parse_condition(r["condition"] or "")} for r in rows]
 
 
 def eligible(cond: dict, days: int, credit: int) -> bool:

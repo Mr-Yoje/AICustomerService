@@ -1,11 +1,12 @@
 {
-  "session_id": "S-f4ba00f0",
+  "session_id": "S-c4684126",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "情绪感知+分期方案协商",
-  "reply": "很抱歉频繁来电让您感到不适，您的反馈我已记录，会控制联系频次。您有还款意愿很好，目前欠款11000元，最长逾期58天，继续增加会影响信用。可以分12期：低息分期月供935.90元，年化3.85%；标准分期月供943.70元，年化5.40%。您看哪个方案能承受？我帮您生成协商记录。",
-  "customer_id": "C0025",
+  "reply": "理解您现在的压力，频繁来电让您不舒服，我先向您道歉，也会记录反馈、控制联系频次。您欠款共**元，可以分期，想约您方便的时间再细聊。方案上推荐12期低息分期，月供**元，年化利率3.85%，手续费**元，总成本**元，会生成协商记录。您看这个方案方便了解吗？",
+  "usage": null,
+  "customer_id": "C**25",
   "hit_rules": [],
   "compliance": [
     {
@@ -20,8 +21,8 @@
       "notes": []
     }
   ],
-  "willingness_score": 70,
-  "willingness_level": "高",
+  "willingness_score": 65,
+  "willingness_level": "中",
   "strategy": "协商分期",
   "handoff": false,
   "handoff_package_id": null,
@@ -31,11 +32,12 @@
   "key_points": [
     "客户意图：要求分期",
     "情绪：焦虑（强度0.70）",
-    "推荐方案：T002 低息分期 12期，月供935.90元",
-    "还款意愿：70分（高）",
+    "推荐方案：T002 低息分期 12期，月供**元",
+    "识别置信度：0.9",
+    "还款意愿：65分（中，置信度1.0）",
     "建议策略：协商分期"
   ],
-  "trace_id": "TR-05e12c68c6",
+  "trace_id": "TR-204534413d",
   "trace": [
     {
       "step": "route",
@@ -55,7 +57,7 @@
       "detail": {
         "loan_type": "教育贷",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },
@@ -68,17 +70,17 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0025"
+          "customer_id": "C**25"
         },
         "output": {
-          "customer_id": "C0025",
+          "customer_id": "C**25",
           "profile": {
-            "customer_id": "C0025",
-            "customer_name": "客户0025",
-            "age": 33,
-            "occupation": "工厂工人",
-            "monthly_income": 5400.0,
-            "credit_score": 640,
+            "customer_id": "C**25",
+            "customer_name": "**",
+            "age": "**",
+            "occupation": "**",
+            "monthly_income": "**",
+            "credit_score": "**",
             "region": "东北",
             "customer_level": "C"
           },
@@ -101,7 +103,7 @@
               "behavior_id": "B0058",
               "behavior_type": "承诺还款",
               "behavior_time": "2025-05-21 17:05",
-              "behavior_detail": "客户在APP内承诺月底前还款500元",
+              "behavior_detail": "客户在APP内承诺月底前还款**元",
               "source": "原始导入"
             },
             {
@@ -182,10 +184,10 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0025"
+          "customer_id": "C**25"
         },
         "output": {
-          "customer_id": "C0025",
+          "customer_id": "C**25",
           "items": [
             {
               "overdue_id": "O0059",
@@ -233,7 +235,7 @@
             }
           ],
           "total_amount": 11000.0,
-          "suggestion": "建议优先处理 O0059（教育贷，逾期58天，欠款3800元）",
+          "suggestion": "建议优先处理 O0059（教育贷，逾期58天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": []
         }
@@ -249,11 +251,11 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0025",
+          "customer_id": "C**25",
           "day": "2026-10-24"
         },
         "output": {
-          "customer_id": "C0025",
+          "customer_id": "C**25",
           "day": "2026-10-24",
           "count": 0
         }
@@ -269,10 +271,10 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0025"
+          "customer_id": "C**25"
         },
         "output": {
-          "customer_id": "C0025",
+          "customer_id": "C**25",
           "score": 65,
           "level": "中",
           "factors": [
@@ -300,7 +302,7 @@
                 "O0059",
                 "O0060"
               ],
-              "note": "最长逾期58天，总欠款11000元，为月收入的2.04倍"
+              "note": "最长逾期58天，总欠款**元，为月收入的2.04倍"
             },
             {
               "name": "行为信号",
@@ -347,9 +349,9 @@
               "weight": 0.15,
               "contribution": 8.34,
               "evidence": [
-                "C0025"
+                "C**25"
               ],
-              "note": "信用评分640，客户等级C"
+              "note": "信用评分**，客户等级C"
             }
           ],
           "adjustments": [],
@@ -367,7 +369,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-f4ba00f0"
+        "session_id": "S-c4684126"
       },
       "ms": 0
     },
@@ -399,7 +401,7 @@
           "method": "大模型"
         }
       },
-      "ms": 835
+      "ms": 821
     },
     {
       "step": "understand",
@@ -449,7 +451,7 @@
           "lump_sum": false
         },
         "output": {
-          "customer_id": "C0025",
+          "customer_id": "C**25",
           "principal": 11000.0,
           "overdue_ids": [
             "O0057",
@@ -458,7 +460,7 @@
             "O0060"
           ],
           "max_overdue_days": 58,
-          "credit_score": 640,
+          "credit_score": "**",
           "affordable_monthly": 1620.0,
           "affordability_source": "按月收入的30%估算",
           "eligible_templates": [
@@ -522,105 +524,7 @@
       "name": "willingness_update",
       "status": "ok",
       "detail": {
-        "owner": "collection:consumer_finance",
-        "kind": "skill",
-        "attempt": 1,
-        "input": {
-          "intents": [
-            "要求分期"
-          ]
-        },
-        "output": {
-          "customer_id": "C0025",
-          "score": 70,
-          "level": "高",
-          "factors": [
-            {
-              "name": "还款履约",
-              "score": 75.0,
-              "weight": 0.25,
-              "contribution": 18.75,
-              "evidence": [
-                "RP0057",
-                "RP0058",
-                "RP0059",
-                "RP0060"
-              ],
-              "note": "按时还款3/4次"
-            },
-            {
-              "name": "逾期严重度",
-              "score": 42.1,
-              "weight": 0.2,
-              "contribution": 8.41,
-              "evidence": [
-                "O0057",
-                "O0058",
-                "O0059",
-                "O0060"
-              ],
-              "note": "最长逾期58天，总欠款11000元，为月收入的2.04倍"
-            },
-            {
-              "name": "行为信号",
-              "score": 80.0,
-              "weight": 0.15,
-              "contribution": 12.0,
-              "evidence": [
-                "B0058",
-                "B0059",
-                "B0060"
-              ],
-              "note": "正向3条，负向0条"
-            },
-            {
-              "name": "历史催收结果",
-              "score": 80.0,
-              "weight": 0.15,
-              "contribution": 12.0,
-              "evidence": [
-                "CH0071",
-                "CH0072",
-                "CH0073",
-                "CH0075",
-                "CH0074"
-              ],
-              "note": "正向4条，负向1条"
-            },
-            {
-              "name": "情绪",
-              "score": 58.5,
-              "weight": 0.1,
-              "contribution": 5.85,
-              "evidence": [
-                "E0060",
-                "E0059",
-                "E0058",
-                "E0057"
-              ],
-              "note": "配合(0.68)、焦虑(0.71)、羞愧(0.64)、焦虑(0.76)"
-            },
-            {
-              "name": "信用画像",
-              "score": 55.6,
-              "weight": 0.15,
-              "contribution": 8.34,
-              "evidence": [
-                "C0025"
-              ],
-              "note": "信用评分640，客户等级C"
-            }
-          ],
-          "adjustments": [
-            {
-              "intent": "要求分期",
-              "delta": 5
-            }
-          ],
-          "confidence": 1.0,
-          "needs_review": false,
-          "review_reasons": []
-        }
+        "source": "前置工具"
       },
       "ms": 0
     },
@@ -640,7 +544,7 @@
             "客户说": "我一个月就挣五千多，欠了一万多真还不上，能不能分长一点，每个月少还点？",
             "客户情绪": "焦虑（0.70）",
             "事实": {
-              "欠款总额": "11000元",
+              "欠款总额": "**元",
               "逾期笔数": 4,
               "最长逾期": "58天",
               "分期方案": [
@@ -648,35 +552,36 @@
                   "模板": "T002",
                   "类型": "低息分期",
                   "期数": 12,
-                  "月供": "935.90元",
+                  "月供": "**元",
                   "年化利率": "3.85%",
-                  "手续费": "0.00元",
-                  "总成本": "11230.74元",
+                  "手续费": "**元",
+                  "总成本": "**元",
                   "说明": ""
                 },
                 {
                   "模板": "T003",
                   "类型": "标准分期",
                   "期数": 12,
-                  "月供": "943.70元",
+                  "月供": "**元",
                   "年化利率": "5.40%",
-                  "手续费": "110.00元",
-                  "总成本": "11434.40元",
+                  "手续费": "**元",
+                  "总成本": "**元",
                   "说明": ""
                 },
                 {
                   "模板": "T004",
                   "类型": "标准分期",
                   "期数": 12,
-                  "月供": "952.81元",
+                  "月供": "**元",
                   "年化利率": "7.20%",
-                  "手续费": "165.00元",
-                  "总成本": "11598.70元",
+                  "手续费": "**元",
+                  "总成本": "**元",
                   "说明": ""
                 }
               ],
               "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取",
-              "还款意愿等级": "高"
+              "还款意愿": "65分（中，置信度1.0）",
+              "还款意愿等级": "中"
             },
             "对话摘要": "",
             "最近对话": []
@@ -684,11 +589,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "很抱歉频繁来电让您感到不适，您的反馈我已记录，会控制联系频次。您有还款意愿很好，目前欠款11000元，最长逾期58天，继续增加会影响信用。可以分12期：低息分期月供935.90元，年化3.85%；标准分期月供943.70元，年化5.40%。您看哪个方案能承受？我帮您生成协商记录。",
+          "reply": "理解您现在的压力，频繁来电让您不舒服，我先向您道歉，也会记录反馈、控制联系频次。您欠款共**元，可以分期，想约您方便的时间再细聊。方案上推荐12期低息分期，月供**元，年化利率3.85%，手续费**元，总成本**元，会生成协商记录。您看这个方案方便了解吗？",
           "source": "大模型"
         }
       },
-      "ms": 1144
+      "ms": 1030
     },
     {
       "step": "guard",

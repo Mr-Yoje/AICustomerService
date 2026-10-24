@@ -14,6 +14,7 @@ from cagent import db, importer, settings  # noqa: E402
 from cagent.agents.main import MODE_COLLECTION, MODE_HANDOFF, MainAgent  # noqa: E402
 from cagent.audit import export_audit_csv  # noqa: E402
 from cagent.cases import CaseStore  # noqa: E402
+from cagent.desensitize import export_mask, redact  # noqa: E402
 
 COLUMNS = ["question_id", "scene_type", "customer_id", "user_input", "intent", "reply", "key_points", "hit_rules",
            "willingness_score", "strategy", "speaker", "needs_review", "review_reasons", "trace_id"]
@@ -35,16 +36,17 @@ def run(conn, *, db_path, input_path: Path, output_dir: Path, now: datetime, off
                              customer_id=q.get("customer_id") or None, now=now, interactive=False)
             if t.session_id and t.mode in (MODE_COLLECTION, MODE_HANDOFF):
                 agent.end_collection(t.session_id, now, "测评单题结束")
-            row = {**base, "intent": t.system_intent, "reply": t.reply, "key_points": "；".join(t.key_points),
+            row = {**base, "intent": t.system_intent, "reply": export_mask(t.reply),
+                   "key_points": export_mask("；".join(t.key_points)),
                    "hit_rules": ",".join(t.hit_rules), "willingness_score": t.willingness_score or "",
                    "strategy": t.strategy or "", "speaker": t.speaker, "needs_review": "是" if t.needs_review else "否",
-                   "review_reasons": "；".join(t.review_reasons), "trace_id": t.trace_id}
-            trace = t.model_dump(mode="json")
+                   "review_reasons": export_mask("；".join(t.review_reasons)), "trace_id": t.trace_id}
+            trace = redact(t.model_dump(mode="json"))
         except Exception as e:  # noqa: BLE001 单题异常不能中断整批测评
             row = {**base, "intent": "", "reply": f"[处理异常] {type(e).__name__}: {e}", "key_points": "",
                    "hit_rules": "", "willingness_score": "", "strategy": "", "speaker": "", "needs_review": "是",
                    "review_reasons": "处理异常", "trace_id": ""}
-            trace = {"error": traceback.format_exc()}
+            trace = redact({"error": traceback.format_exc()})
         (output_dir / "traces" / f"{qid}.json").write_text(json.dumps(trace, ensure_ascii=False, indent=2),
                                                            encoding="utf-8")
         rows.append(row)
@@ -54,11 +56,20 @@ def run(conn, *, db_path, input_path: Path, output_dir: Path, now: datetime, off
         w.writeheader()
         w.writerows(rows)
     export_audit_csv(conn, output_dir / "audit_log.csv")
-    for art in CaseStore(conn).artifacts(kind="催收报告"):
-        (output_dir / "reports" / f"{art['session_id']}.md").write_text(art["content"]["markdown"], encoding="utf-8")
-    for art in CaseStore(conn).artifacts(kind="汇总报告"):
-        (output_dir / "reports" / f"summary-{art['artifact_id']}.md").write_text(
-            "```json\n" + json.dumps(art["content"], ensure_ascii=False, indent=2) + "\n```", encoding="utf-8")
+    report_dir = output_dir / "reports"
+    for old in report_dir.glob("*.md"):
+        old.unlink()
+    for art in CaseStore(conn).artifacts():
+        content = art["content"]
+        if art["kind"] == "汇总报告":
+            text = "```json\n" + json.dumps(redact(content), ensure_ascii=False, indent=2) + "\n```"
+            name = f"summary-{art['artifact_id']}.md"
+        elif isinstance(content, dict) and content.get("markdown"):
+            text = export_mask(content["markdown"])
+            name = f"{art['session_id']}.md" if art["kind"] == "催收报告" and art["session_id"] else f"{art['artifact_id']}.md"
+        else:
+            continue
+        (report_dir / name).write_text(text, encoding="utf-8")
     return rows
 
 

@@ -1,11 +1,12 @@
 {
-  "session_id": "S-6ed41bc4",
+  "session_id": "S-4a9d4b9d",
   "mode": "运营模式",
   "speaker": "operator",
   "speaker_method": "大模型",
   "system_intent": "提醒催收",
   "reply": "外呼已拦截：命中 R004（违规时段）禁止在22:00-次日8:00进行外呼，处置：阻断外呼并提示下次可外呼时间。下次可外呼时间：2026-10-25 08:00，已生成待办",
-  "customer_id": "C0018",
+  "usage": null,
+  "customer_id": "C**18",
   "hit_rules": [
     "R004"
   ],
@@ -22,7 +23,7 @@
           "action": "阻断外呼并提示下次可外呼时间",
           "method": "时段",
           "evidence": "22:00-次日08:00",
-          "confidence": 1.0
+          "confidence": 0.8
         }
       ],
       "block": true,
@@ -42,7 +43,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-3d57517a80",
+  "trace_id": "TR-5399c212e0",
   "trace": [
     {
       "step": "route",
@@ -61,7 +62,7 @@
       "status": "ok",
       "detail": {
         "intent": "发起催收",
-        "customer_id": "C0018",
+        "customer_id": "C**18",
         "method": "大模型",
         "confidence": 0.85
       },
@@ -74,7 +75,7 @@
       "detail": {
         "loan_type": "车贷",
         "pack": "auto_loan",
-        "version": "aa60a22d74"
+        "version": "5843f215c3"
       },
       "ms": 0
     },

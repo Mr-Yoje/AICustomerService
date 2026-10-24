@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sqlite3
@@ -22,6 +23,7 @@ class LLMError(Exception):
 
 
 _session_id: ContextVar[str | None] = ContextVar("llm_session_id", default=None)
+log = logging.getLogger("cagent")
 
 
 def push_llm_session(session_id: str | None):
@@ -43,6 +45,19 @@ def bind_session(session_id: str | None):
         yield
     finally:
         pop_llm_session(token)
+
+
+def usage_since(conn: sqlite3.Connection, after_id: int) -> dict:
+    """汇总一次回复期间新写入的大模型调用。没有调用时 calls 为 0。"""
+    rows = conn.execute(
+        "SELECT prompt_tokens, completion_tokens, cache_hit_tokens FROM llm_calls WHERE id > ?",
+        (after_id,)).fetchall()
+    return {
+        "prompt_tokens": sum(r["prompt_tokens"] or 0 for r in rows),
+        "completion_tokens": sum(r["completion_tokens"] or 0 for r in rows),
+        "cache_hit_tokens": sum(r["cache_hit_tokens"] or 0 for r in rows),
+        "calls": len(rows),
+    }
 
 
 def _usage_fields(usage) -> dict:
@@ -188,11 +203,20 @@ class GuardedLLM:
                  usage.get("cache_hit_tokens"), usage.get("cache_miss_tokens")),
             )
             self.conn.commit()
+        log.info("大模型 %s %s %dms", purpose, status, int((time.perf_counter() - start) * 1000))
+
+    def _names(self, extra: Iterable[str]) -> list[str]:
+        found: list[str] = []
+        try:
+            found = [r[0] for r in self.conn.execute("SELECT customer_name FROM dim_customer") if r[0]]
+        except Exception:  # noqa: BLE001 库尚未建表时仍按调用方给出的名单掩码
+            found = []
+        return [n for n in (*extra, *found) if n]
 
     def json(self, purpose: str, system: str, payload: dict, *, names: Iterable[str] = ()) -> dict:
         if self.client is None:
             raise LLMError("大模型不可用")
-        masked_user, mm = mask(json.dumps(payload, ensure_ascii=False), names=names)
+        masked_user, mm = mask(json.dumps(payload, ensure_ascii=False), names=self._names(names))
         full_system = f"任务代号：{purpose}\n{system}"
         start = time.perf_counter()
         try:
@@ -206,7 +230,7 @@ class GuardedLLM:
     def stream(self, purpose: str, system: str, payload: dict, *, names: Iterable[str] = ()) -> Iterator[str]:
         if self.client is None:
             raise LLMError("大模型不可用")
-        masked_user, mm = mask(json.dumps(payload, ensure_ascii=False), names=names)
+        masked_user, mm = mask(json.dumps(payload, ensure_ascii=False), names=self._names(names))
         full_system = f"任务代号：{purpose}\n{system}"
         start = time.perf_counter()
         raw, pending = [], ""

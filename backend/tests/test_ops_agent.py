@@ -128,6 +128,31 @@ def test_review_speech_blocks_threat_without_todo(ops, db_conn):
     assert db_conn.execute("SELECT scene FROM audit_log ORDER BY rowid DESC LIMIT 1").fetchone()["scene"] == "话术审核"
 
 
+def test_third_party_relay_rewrite_drops_amount_and_name(ops):
+    out = ops.review_speech(
+        "您好，请问是李女士吗？您同事王先生在我们平台有32600元欠款逾期半年多了，麻烦您转告他赶紧处理，不然我们只能联系他家里人了。",
+        customer_id="C0001", scene="话术审核", extra_rules=[],
+        rewrite_fallback="麻烦您转告王先生，他有一笔32600元的欠款已逾期。", opening="规范开场", now=NOW, trace=Trace())
+    suggestion = out.reply.split("建议改写：", 1)[-1]
+    assert "32600" not in suggestion and "王先生" not in suggestion and "李女士" not in suggestion and "转告" not in suggestion
+
+
+def test_review_speech_strips_third_party_debt(ops):
+    out = ops.review_speech(
+        "不然我们只能联系你同事了，王先生欠款32600元，请转告李女士。", customer_id="C0001", scene="话术审核",
+        extra_rules=[], rewrite_fallback="王先生还欠32600元，请转告李女士。", opening="规范开场", now=NOW, trace=Trace())
+    assert "R009" in out.hit_rules
+    assert "王先生" not in out.reply and "李女士" not in out.reply and "32600" not in out.reply
+    assert out.reply.endswith("请只与客户本人沟通账单，不要提及他人的姓名和欠款。")
+
+
+def test_profile_reads_customer_memory(ops):
+    ops.memory.set("customer", "C0001", "last_willingness", {"score": 42, "level": "低"}, "测试")
+    ops.memory.set("customer", "C0001", "open_promises", [{"amount": 3000, "date": "2026-11-01"}], "测试")
+    out = ops.answer("查询画像", "查一下画像", "C0001", NOW, Trace())
+    assert "上次会话还款意愿42分" in out.reply and "2026-11-01" in out.reply
+
+
 def test_review_speech_pass_uses_opening(ops):
     out = ops.review_speech(
         "您好，请核实本人身份。", customer_id="C0001", scene="人工坐席", extra_rules=[],

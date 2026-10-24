@@ -13,7 +13,7 @@ from ..audit import write_event
 from ..cases import CaseStore
 from ..clock import parse_time_hint
 from ..compliance import CheckResult, ComplianceEngine
-from ..config_center import ConfigCenter, validate_pack
+from ..config_center import ConfigCenter, ConfigError, registry_overrides, validate_pack
 from ..desensitize import display_mask
 from ..llm import GuardedLLM, bind_session, build_llm, set_llm_session
 from ..memory import MemoryStore
@@ -32,6 +32,12 @@ HELP_TEXT = ("我可以帮您：查询客户画像或欠款、判断当前能否
 CLARIFY_SPEAKER = "请问这句话是客户说的、坐席说的，还是您（运营）的指令？"
 
 
+class TurnUsage(BaseModel):
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    cache_hit_tokens: int = 0
+
+
 class MainTurn(BaseModel):
     session_id: str | None = None
     mode: str = MODE_OPERATOR
@@ -39,6 +45,7 @@ class MainTurn(BaseModel):
     speaker_method: str = ""
     system_intent: str
     reply: str
+    usage: TurnUsage | None = None
     customer_id: str | None = None
     hit_rules: list[str] = []
     compliance: list[CheckResult] = []
@@ -103,8 +110,22 @@ class MainAgent:
             ops.engine, ops.policy, ops.intents = self.engine, self.policy, self.intents
             ops.main_cfg, ops.cp_version, ops.llm = self.main_cfg, self.cp_version, self.llm
 
+    def _latest_round(self, session_id: str | None) -> list[dict] | None:
+        if not session_id or self.cases.get_session(session_id) is None:
+            return None
+        msgs = self.cases.messages(session_id)[-2:]
+        if not msgs:
+            return None
+        return [{"role": m["role"], "text": m["text"][:200]} for m in msgs]
+
     def _default_pack(self) -> dict:
         return self.cc.get("business_pack", self.main_cfg["default_pack"])[0]
+
+    def registry_items(self) -> dict:
+        try:
+            return registry_overrides(self.cc.get("registry")[0])
+        except ConfigError:
+            return {}
 
     def validate(self, pack: dict) -> list[str]:
         return validate_pack(pack, main_tools=set(self.ops.registry.names("tool")), collection_actions=ACTION_NAMES,
@@ -140,7 +161,7 @@ class MainAgent:
             return self._finish(trace, session_id=session_id, speaker="unknown", system_intent="提醒催收",
                                 reply="没有识别到有效内容，请重新输入。", customer_id=customer_id, needs_review=True,
                                 review_reasons=[f"输入异常：{issue}"])
-        judged = self.understander.speaker(clean, scene_type)
+        judged = self.understander.speaker(clean, scene_type, recent=self._latest_round(session_id))
         in_collection = bool(sess and not sess["ended_at"] and sess["mode"] == MODE_COLLECTION and session_id in self.agents)
         if not judged.needs_clarify:
             sp = judged
@@ -212,7 +233,7 @@ class MainAgent:
             conn=self.conn, session_id=sid, case_id=case_id, customer_id=customer_id, pack=pack,
             audit_version=f"{pv}/{self.cp_version}", policy=self.policy, intents_cfg=self.intents, engine=self.engine,
             llm=self.llm, understander=self.understander, memory=self.memory, cases=self.cases,
-            snapshot=prepared.snapshot, verified=channel == "客户进线")
+            snapshot=prepared.snapshot, verified=channel == "客户进线", registry_cfg=self.registry_items())
         self.cases.update_session(sid, mode=MODE_COLLECTION)
         self.cases.set_case_status(case_id, "对话中", now)
         trace.add("route", "切换模式", mode=MODE_COLLECTION, pack=pack["pack_id"], session_id=sid)
@@ -241,8 +262,10 @@ class MainAgent:
             pts.append(out.plan.message)
         if out.loans and out.loans.items:
             pts.append(out.loans.suggestion)
+        if out.confidence is not None:
+            pts.append(f"识别置信度：{out.confidence}")
         if out.willingness:
-            pts.append(f"还款意愿：{out.willingness.score}分（{out.willingness.level}）")
+            pts.append(f"还款意愿：{out.willingness.score}分（{out.willingness.level}，置信度{out.willingness.confidence}）")
         if out.strategy:
             pts.append(f"建议策略：{out.strategy}")
         if out.handoff:
@@ -260,6 +283,10 @@ class MainAgent:
             self.end_collection(sid, now, out.end_reason)
             trace.add("route", "切换模式", mode=MODE_OPERATOR, reason=out.end_reason, session_id=sid)
             mode = MODE_OPERATOR
+        if out.needs_review:
+            self.cases.add_todo(agent.case_id, sid, "人工复核",
+                                "；".join(out.review_reasons) or "本轮需要人工复核", None, now,
+                                todo_id=f"TD-{sid}-review")
         return self._finish(
             trace, session_id=sid, mode=mode, speaker="customer",
             speaker_method=method, system_intent=out.system_intent, reply=out.reply, customer_id=agent.customer_id,
@@ -327,7 +354,8 @@ class MainAgent:
                     system_intent=self.intents["operator_to_system"].get(oi.intent, "提醒催收"))
         handlers = {"合规问答": self._op_query("合规问答"), "生成报告": self._op_query("生成报告"),
                     "查询欠款": self._op_query("查询欠款"), "查询画像": self._op_query("查询画像"),
-                    "发起催收": self._op_start, "结束催收": self._op_end}
+                    "发起催收": self._op_start, "结束催收": self._op_end,
+                    "失联修复": self._op_query("失联修复")}
         handler = handlers.get(oi.intent)
         if handler is None:
             return self._finish(trace, **base, reply=HELP_TEXT)

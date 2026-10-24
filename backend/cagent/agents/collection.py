@@ -26,6 +26,14 @@ _REFUSE = re.compile(r"不还|还不了|没钱|不会还")
 _CONFIRM = re.compile(r"同意|就按|就这个|确认|我会还|马上还|今天还|明天还|这就还|我还")
 _PLAN_ACCEPT = re.compile(r"按.{0,8}期|期.{0,6}还")
 _ASK_AMOUNT = re.compile(r"可承受|还多少|每月[^。]{0,8}多少|一个月能还")
+
+
+def _risk_grade(days: int) -> str:
+    if days >= 180:
+        return "高"
+    if days >= 90:
+        return "中"
+    return "低"
 _END_AGREED = "客户已确认还款、还款方案和还款时间"
 
 
@@ -91,6 +99,7 @@ class TurnOutput(BaseModel):
     end_reason: str | None = None
     needs_review: bool = False
     review_reasons: list[str] = []
+    confidence: float | None = None
 
 
 class Empty(BaseModel):
@@ -157,11 +166,12 @@ class CollectionAgent:
     def __init__(self, *, conn: sqlite3.Connection, session_id: str, case_id: str, customer_id: str, pack: dict,
                  audit_version: str, policy: dict, intents_cfg: dict, engine: ComplianceEngine, llm: GuardedLLM,
                  understander: Understander, memory: MemoryStore, cases: CaseStore, snapshot: Snapshot,
-                 verified: bool):
+                 verified: bool, registry_cfg: dict | None = None):
         self.conn, self.session_id, self.case_id, self.customer_id = conn, session_id, case_id, customer_id
         self.pack, self.audit_version, self.policy, self.intents = pack, audit_version, policy, intents_cfg
         self.engine, self.llm, self.understander = engine, llm, understander
         self.memory, self.cases, self.snapshot = memory, cases, snapshot
+        self.registry_cfg = registry_cfg
         self.allowed_templates = (pack.get("skill_params", {}).get("installment_plan") or {}).get("templates")
         first = pack["stages"][0]
         self.stage = first["next"] if verified and first.get("next") else first["id"]
@@ -175,16 +185,17 @@ class CollectionAgent:
         self.memory.set("session", self.session_id, key, value, source)
 
     def _append(self, key: str, item, source: str) -> None:
-        self._set(key, [*self._mem(key, []), item], source)
+        self._set(key, [*self._mem(key, []), item][-20:], source)
 
     def _turn(self) -> int:
         return len(self.cases.messages(self.session_id)) // 2 + 1
 
     @classmethod
-    def describe_registry(cls, pack: dict, conn, policy: dict) -> list[dict]:
+    def describe_registry(cls, pack: dict, conn, policy: dict, registry_cfg: dict | None = None) -> list[dict]:
         """不绑定客户和会话，仅用于展示某业务包子 Agent 的工具与 Skill 契约。"""
         stub = cls.__new__(cls)
         stub.pack, stub.conn, stub.customer_id, stub.policy = pack, conn, None, policy
+        stub.registry_cfg = registry_cfg
         return stub._build_registry().describe()
 
     def _build_registry(self) -> Registry:
@@ -219,6 +230,7 @@ class CollectionAgent:
                    description="按阶段目标与事实生成坐席话术", timeout_s=40, retries=0)
         r.register("dialog_summary", lambda a: ReplyOut(reply=self.cases.context(self.session_id)["summary"], source="规则"),
                    Empty, ReplyOut, kind="skill", description="对话小结")
+        r.apply(getattr(self, "registry_cfg", None))
         return r
 
     def _record_promise(self, a: PromiseIn) -> AckOut:
@@ -244,8 +256,31 @@ class CollectionAgent:
         self.memory.set("customer", self.customer_id, "complaints", complaints, "reduce_contact")
         return AckOut(detail={"contact_preference": "降低联系频次"})
 
+    def _prior_note(self) -> str:
+        promises = self.memory.get("customer", self.customer_id, "open_promises") or []
+        if not promises:
+            return ""
+        last = promises[-1]
+        amount = last.get("amount")
+        amount_text = f"{float(amount):.0f}元" if isinstance(amount, (int, float)) else ""
+        return f"上次您承诺{last.get('date') or '近期'}还款{amount_text}，我先与您核对。"
+
+    def _prior_facts(self) -> dict:
+        facts = {}
+        remembered = self.memory.get("customer", self.customer_id, "last_willingness")
+        if remembered:
+            facts["上次还款意愿"] = f"{remembered.get('score')}分（{remembered.get('level')}）"
+        contact = self.memory.get("customer", self.customer_id, "last_contact")
+        if contact:
+            facts["上次联系"] = f"{contact.get('time')}，结果{contact.get('result')}"
+        promises = self.memory.get("customer", self.customer_id, "open_promises") or []
+        if promises:
+            last = promises[-1]
+            facts["未结承诺"] = f"{last.get('date') or '近期'}还款{last.get('amount') or ''}"
+        return facts
+
     def opening(self, now: datetime, trace: Trace) -> TurnOutput:
-        reply = format_speech(self.pack, "opening")
+        reply = format_speech(self.pack, "opening") + self._prior_note()
         checks = [self._check(reply, now, trace, semantic=False)]
         self.cases.add_message(self.session_id, "AI坐席", reply, {"stage": self.stage}, now)
         return TurnOutput(reply=reply, customer_intent="其他", system_intent="提醒催收", emotion="平静",
@@ -279,6 +314,7 @@ class CollectionAgent:
         trace.add("guard", "检查点三：客户输入", signals=cp3.signals)
         if u.confidence < self.intents.get("low_confidence", 0.6) or u.conflict:
             review.append("意图识别置信度低或存在意图冲突，需人工复核")
+        had_dialog = bool(self._mem("intents"))
         self._update_memory(u, clean)
         self.stage = self._next_stage(u.customer_intent)
         actions = list(self.pack["intent_actions"].get(u.customer_intent, []))
@@ -306,7 +342,12 @@ class CollectionAgent:
                 review += out.conflicts
         will, strategy = None, None
         try:
-            will = self.registry.call("willingness_update", trace, intents=self._mem("intents", []))
+            fresh = self.snapshot.willingness if not had_dialog and self.snapshot.willingness else None
+            if fresh:
+                will = Willingness.model_validate(fresh)
+                trace.add("call", "willingness_update", "ok", source="前置工具")
+            else:
+                will = self.registry.call("willingness_update", trace, intents=self._mem("intents", []))
             strategy = choose_strategy(self.policy, will.level, max_overdue_days(self.conn, self.customer_id))
             self._set("willingness", will.model_dump(mode="json"), "willingness_update")
             self._set("strategy", strategy, "策略表")
@@ -330,6 +371,8 @@ class CollectionAgent:
         elif handoff_reason:
             system_intent = "人工接管"
             reply = format_speech(self.pack, "handoff")
+            if u.customer_intent == "投诉":
+                reply = "非常抱歉给您带来困扰。\n" + reply
             checks = [self._check(reply, now, trace, semantic=False)]
         else:
             reply, checks, forced = self._compose(clean, u, system_intent, facts, now, trace)
@@ -340,6 +383,8 @@ class CollectionAgent:
             checks = [self._check(reply, now, trace, semantic=False)]
         if _ASK_AMOUNT.search(reply):
             self._set("amount_asked", True, "已询问还款金额")
+        if system_intent == "多贷款管理" and loans and loans.items:
+            strategy = "优先处理逾期最长的一笔"
         if any(c.degraded for c in checks):
             review.append("语义合规判定不可用，已按关键词规则判定")
         self._log_turn(text, reply, {"intent": u.customer_intent, "system_intent": system_intent, "emotion": u.emotion,
@@ -350,7 +395,7 @@ class CollectionAgent:
                           emotion_intensity=u.emotion_intensity, stage=self.stage, actions=done, compliance=checks,
                           willingness=will, strategy=strategy, plan=plan, loans=loans, handoff=bool(handoff_reason),
                           handoff_reason=handoff_reason, end_reason=end_reason, needs_review=bool(review),
-                          review_reasons=list(dict.fromkeys(review)))
+                          review_reasons=list(dict.fromkeys(review)), confidence=u.confidence)
 
     def _update_memory(self, u: Understanding, text: str) -> None:
         intents = self._mem("intents", [])
@@ -431,6 +476,8 @@ class CollectionAgent:
             f["逾期明细"] = [{"编号": i.overdue_id, "贷款类型": i.loan_type or "未知", "逾期天数": i.overdue_days,
                           "欠款": f"{i.overdue_amount:.0f}元"} for i in loans.items]
             f["优先建议"] = loans.suggestion
+            f["欠款总额"] = f"{loans.total_amount:.0f}元"
+            f["风险等级"] = _risk_grade(max(i.overdue_days for i in loans.items))
         if self._mem("waivers"):
             f["减免申请"] = "已提交，结果以审批为准"
         if self._mem("grace_request"):
@@ -438,7 +485,11 @@ class CollectionAgent:
         if self._mem("promises"):
             f["已确认承诺"] = [{"金额": f"{p['amount']:.0f}元" if p.get("amount") else None, "日期": p.get("date")}
                           for p in self._mem("promises")]
+        if self.snapshot.contact_count_today:
+            f["今日已联系"] = f"{self.snapshot.contact_count_today}次"
+        f.update(self._prior_facts())
         if will:
+            f["还款意愿"] = f"{will.score}分（{will.level}，置信度{will.confidence}）"
             f["还款意愿等级"] = will.level
         if self._mem("monthly_affordable"):
             f["可承受金额"] = f"{float(self._mem('monthly_affordable')):.0f}元"
@@ -501,8 +552,10 @@ class CollectionAgent:
                 reply = format_speech(self.pack, "handoff")
                 checks.append(self._check(reply, now, trace, semantic=False))
                 return reply, checks, "坐席话术命中严重级规则：" + "、".join(h.rule_id for h in r.hits)
+            keep = ("不得保留第三方姓名、称谓和欠款金额。"
+                    if any(h.rule_id in {"R006", "R009"} for h in r.hits) else "保留业务信息。")
             hint = ("上一版话术违反：" + "；".join(f"{h.rule_id} {h.rule_content}（{h.evidence}）" for h in r.hits)
-                    + "。请改写为合规表述，保留业务信息。")
+                    + "。请改写为合规表述，" + keep)
             trace.add("guard", "话术改写", "retry", hint=hint)
             if not self.llm.available:
                 break
@@ -527,7 +580,10 @@ class CollectionAgent:
             return self.registry.call("generate_reply", trace, payload=payload, rewrite_hint=hint).reply
         except CallError as e:
             trace.add("reply", "话术生成降级", "warn", reason=e.reason)
-            return self._template_reply(u.customer_intent, system_intent, facts)
+            body = self._template_reply(u.customer_intent, system_intent, facts)
+            if "超时" in e.reason:
+                return f"话术生成超时，已改为模板说明。{body}"
+            return body
 
     def _reply_system(self, stage_goal: str) -> str:
         sp = self.pack["speech"]
@@ -541,7 +597,7 @@ class CollectionAgent:
             "- 情绪感知：先道歉并承认频繁来电造成不适，记录反馈，说明会控制联系频次，再约一个方便的沟通时间。这一句不要转人工。\n"
             "- 合规检测：感谢还款意愿，明确不能承诺减免全部利息或未经审批的减免，说明可先提交申请、以审批为准，并推荐事实中的分期方案。\n"
             "- 人工接管：马上转接人工，说明对话记录和账户信息已同步、无需重复，并给出预计等待秒数。\n"
-            "- 多贷款管理：按事实逐笔列出贷款类型、逾期天数和欠款金额，建议优先处理逾期天数最长的一笔，询问是否同意。\n"
+            "- 多贷款管理：先给出笔数、合计金额和风险等级，再按事实逐笔列出贷款类型、逾期天数和欠款金额，建议优先处理逾期天数最长的一笔，询问是否同意。\n"
             "系统意图含「+」时，按加号两侧的逻辑依次说完。\n"
             "硬性要求：1. 金额、期数、利率、日期、笔数只能引用“事实”里的数据，不得编造；"
             "2. 不得承诺减免、免息、延期的审批结果，只能说提交申请、以审批为准；"
@@ -582,7 +638,8 @@ class CollectionAgent:
         key = next((k for k in (customer_intent, system_intent) if k in templates), "default")
         return format_speech(self.pack, key, plan_brief=plan_brief, principal=facts.get("欠款总额", ""),
                              loan_count=len(details), loan_list=loan_list, suggestion=facts.get("优先建议", ""),
-                             promise_brief=promise_brief)
+                             promise_brief=promise_brief, total=facts.get("欠款总额", ""),
+                             risk=facts.get("风险等级", ""))
 
     def _check(self, text: str, now: datetime, trace: Trace, semantic: bool = True) -> CheckResult:
         r = self.engine.check_agent_speech(text, extra_rules=self.pack.get("extra_rules", []),

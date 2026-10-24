@@ -4,18 +4,39 @@
   "speaker": "agent",
   "speaker_method": "大模型",
   "system_intent": "合规检测",
-  "reply": "[合规拦截] 命中 R002（威胁，严重）：话术中不得含有威胁性表述；证据「不然我们只能联系他家里人了」；处置：人工接管\n[合规拦截] 命中 R006（泄露隐私，严重）：不得向第三方泄露客户欠款信息；证据「您同事王先生在我们平台有32600元欠款逾期半年多了」；处置：人工接管\n[合规拦截] 命中 R009（骚扰亲友，严重）：不得骚扰客户亲友进行催收；证据「麻烦您转告他赶紧处理，不然我们只能联系他家里人了」；处置：人工接管\n建议改写：您好，请问是李女士吗？麻烦您转告王先生，他有一笔32600元的欠款已逾期，请尽快处理，逾期可能影响个人征信。",
-  "customer_id": "C0026",
+  "reply": "[合规拦截] 命中 R006（泄露隐私，严重）：不得向第三方泄露客户欠款信息；证据「转告」；处置：人工接管\n[合规拦截] 命中 R009（骚扰亲友，严重）：不得骚扰客户亲友进行催收；证据「联系他家里人」；处置：人工接管\n[合规拦截] 命中 R002（威胁，严重）：话术中不得含有威胁性表述；证据「不然我们只能联系他家里人了」；处置：人工接管\n建议改写：请只与客户本人沟通账单，不要提及他人的姓名和欠款。",
+  "usage": null,
+  "customer_id": "C**26",
   "hit_rules": [
-    "R002",
     "R006",
-    "R009"
+    "R009",
+    "R002"
   ],
   "compliance": [
     {
       "checkpoint": "agent_speech",
       "passed": false,
       "hits": [
+        {
+          "rule_id": "R006",
+          "rule_type": "泄露隐私",
+          "rule_content": "不得向第三方泄露客户欠款信息",
+          "level": "严重",
+          "action": "人工接管",
+          "method": "关键词",
+          "evidence": "转告",
+          "confidence": 0.8
+        },
+        {
+          "rule_id": "R009",
+          "rule_type": "骚扰亲友",
+          "rule_content": "不得骚扰客户亲友进行催收",
+          "level": "严重",
+          "action": "人工接管",
+          "method": "关键词",
+          "evidence": "联系他家里人",
+          "confidence": 0.8
+        },
         {
           "rule_id": "R002",
           "rule_type": "威胁",
@@ -25,26 +46,6 @@
           "method": "语义",
           "evidence": "不然我们只能联系他家里人了",
           "confidence": 0.95
-        },
-        {
-          "rule_id": "R006",
-          "rule_type": "泄露隐私",
-          "rule_content": "不得向第三方泄露客户欠款信息",
-          "level": "严重",
-          "action": "人工接管",
-          "method": "语义",
-          "evidence": "您同事王先生在我们平台有32600元欠款逾期半年多了",
-          "confidence": 0.97
-        },
-        {
-          "rule_id": "R009",
-          "rule_type": "骚扰亲友",
-          "rule_content": "不得骚扰客户亲友进行催收",
-          "level": "严重",
-          "action": "人工接管",
-          "method": "语义",
-          "evidence": "麻烦您转告他赶紧处理，不然我们只能联系他家里人了",
-          "confidence": 0.96
         }
       ],
       "block": true,
@@ -64,7 +65,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-c702b9d0d9",
+  "trace_id": "TR-35c8c2a263",
   "trace": [
     {
       "step": "route",
@@ -84,7 +85,7 @@
       "detail": {
         "loan_type": "现金贷",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },
@@ -94,20 +95,11 @@
       "status": "warn",
       "detail": {
         "hits": [
-          "R002",
           "R006",
-          "R009"
+          "R009",
+          "R002"
         ],
         "degraded": false
-      },
-      "ms": 0
-    },
-    {
-      "step": "reply",
-      "name": "改写建议",
-      "status": "ok",
-      "detail": {
-        "source": "大模型"
       },
       "ms": 0
     }

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import contextvars
+import json
+import logging
 import queue
 import threading
 from datetime import datetime
@@ -7,11 +10,12 @@ from typing import Iterator
 
 from pydantic import BaseModel
 
-from cagent.agents.main import MODE_COLLECTION, MainAgent
-from cagent.llm import bind_session
+from cagent.agents.main import MODE_COLLECTION, TurnUsage, MainAgent
+from cagent.llm import bind_session, usage_since
 from cagent.narrate import narrate
 from cagent.trace import TraceEvent, jsonable
 
+log = logging.getLogger("cagent")
 ROLES = {"operator": "operator", "customer": "customer", "agent": "agent", "human_agent": "人工坐席"}
 _CHUNK = 4
 _END = object()
@@ -25,6 +29,24 @@ class ChatIn(BaseModel):
     role: str | None = None
     customer_id: str | None = None
     now: datetime | None = None
+
+
+def _ai_messages(conn, session_id: str | None) -> int:
+    if not session_id:
+        return 0
+    return conn.execute("SELECT COUNT(*) FROM messages WHERE session_id=? AND role='AI坐席'", (session_id,)).fetchone()[0]
+
+
+def _stamp_usage(conn, session_id: str, usage: TurnUsage) -> None:
+    row = conn.execute(
+        "SELECT id, meta FROM messages WHERE session_id=? AND role='AI坐席' ORDER BY turn DESC LIMIT 1",
+        (session_id,)).fetchone()
+    if row is None:
+        return
+    meta = json.loads(row["meta"] or "{}")
+    meta["usage"] = usage.model_dump()
+    conn.execute("UPDATE messages SET meta=? WHERE id=?", (json.dumps(meta, ensure_ascii=False), row["id"]))
+    conn.commit()
 
 
 def _chunks(text: str) -> Iterator[Event]:
@@ -43,6 +65,9 @@ class Service:
 
     def _run_turn(self, req: ChatIn, emit) -> None:
         with self.lock:
+            conn = self.agent.conn
+            since = conn.execute("SELECT COALESCE(MAX(id), 0) FROM llm_calls").fetchone()[0]
+            before = _ai_messages(conn, req.session_id)
             turn = self.agent.handle(
                 req.text, session_id=req.session_id, role=ROLES.get(req.role or "", req.role),
                 customer_id=req.customer_id or None, now=req.now,
@@ -59,6 +84,11 @@ class Service:
                     elif kind == "replace":
                         text = data["text"]
                     emit((kind, data))
+            usage = usage_since(conn, since)
+            turn.usage = TurnUsage(**usage) if usage["calls"] else None
+            grew = _ai_messages(conn, turn.session_id) > (before if turn.session_id == req.session_id else 0)
+            if turn.usage and turn.session_id and grew:
+                _stamp_usage(conn, turn.session_id, turn.usage)
             done = turn.model_dump(mode="json", exclude={"trace"})
             done["reply"] = text
             emit(("done", done))
@@ -70,10 +100,11 @@ class Service:
             try:
                 self._run_turn(req, q.put)
             except Exception as e:  # noqa: BLE001 任何失败都要以 error 事件告知前端
+                log.exception("对话处理失败")
                 q.put(("error", {"message": f"{type(e).__name__}: {e}"}))
             finally:
                 q.put(_END)
 
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(target=contextvars.copy_context().run, args=(worker,), daemon=True).start()
         while (item := q.get()) is not _END:
             yield item

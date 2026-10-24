@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextvars
+import logging
 import sqlite3
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -14,8 +16,9 @@ from .config_center import ConfigCenter
 from .loans import prioritize
 from .memory import MemoryStore
 from .reports import render_report_markdown, session_memory, session_report
-from .scoring import score_customer
+from .scoring import Willingness, score_customer
 
+log = logging.getLogger("cagent")
 STAGES = {"write_call_record": 1, "write_behavior": 1, "write_emotion": 1,
           "refresh_profile": 2, "generate_report": 2, "create_todos": 3}
 BEHAVIOR_OF_INTENT = {"承诺还款": "承诺还款", "要求宽限": "申请延期", "要求分期": "协商分期", "要求减免": "申请减免",
@@ -184,6 +187,9 @@ class PostCallRunner:
         else:
             threading.Thread(target=self._run, args=(session_id,), daemon=True).start()
 
+            ctx = contextvars.copy_context()
+            threading.Thread(target=ctx.run, args=(self._run, session_id), daemon=True).start()
+
     def _run(self, session_id: str) -> None:
         conn = db.connect(self.db_path)
         try:
@@ -217,10 +223,12 @@ class PostCallRunner:
                 self._mark(conn, session_id, name, "执行中", 1, None)
                 TASKS[name](build_ctx(conn, session_id, pack, policy))
                 self._mark(conn, session_id, name, "完成", 0, None)
+                log.info("后置任务 %s 完成 会话%s", name, session_id)
                 return True
             except Exception as e:  # noqa: BLE001 单个任务的任意失败都要隔离并记录
                 conn.rollback()
                 error = f"{type(e).__name__}: {e}"
+                log.warning("后置任务 %s 失败 会话%s %s", name, session_id, error)
                 self._mark(conn, session_id, name, "失败", 0, error)
             finally:
                 conn.close()
@@ -262,4 +270,5 @@ class PostCallRunner:
         if sync:
             self._run(session_id)
         else:
-            threading.Thread(target=self._run, args=(session_id,), daemon=True).start()
+            ctx = contextvars.copy_context()
+            threading.Thread(target=ctx.run, args=(self._run, session_id), daemon=True).start()

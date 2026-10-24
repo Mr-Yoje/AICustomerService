@@ -23,6 +23,17 @@ def test_memory_set_get_correct_clear(db_conn):
     assert [r["scene"] for r in ops] == ["纠正", "清除"]
 
 
+def test_memory_expires_and_caps_active_keys(db_conn):
+    m = MemoryStore(db_conn)
+    m.set("customer", "C0001", "old", {"v": 1}, "测试", ts=datetime(2025, 1, 1))
+    assert m.get("customer", "C0001", "old", "无") == "无"
+    for i in range(32):
+        m.set("customer", "C0002", f"k{i}", i, "测试")
+    assert len(m.all("customer", "C0002")) == 30
+    assert m.get("customer", "C0002", "k0", "无") == "无"
+    assert m.get("customer", "C0002", "k31") == 31
+
+
 def test_case_session_messages_and_context(db_conn):
     cs = CaseStore(db_conn)
     case_id = cs.create_case("C0001", "consumer_finance", NOW)

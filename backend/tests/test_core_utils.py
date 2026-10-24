@@ -98,6 +98,32 @@ def test_registry_exhausted_raises():
     assert len(calls) == 2
 
 
+def test_registry_output_error_is_not_retried():
+    calls = []
+
+    def fn(a):
+        calls.append(1)
+        return {"y": "bad"}
+
+    reg = Registry("test")
+    reg.register("bad", fn, In, Out, kind="tool", description="d", retries=2)
+    with pytest.raises(CallError) as e:
+        reg.call("bad", Trace(), x=1)
+    assert e.value.retryable is False and calls == [1]
+
+
+def test_registry_apply_overrides_and_disable_skips_call():
+    reg = Registry("ops")
+    reg.register("double", lambda a: {"y": a.x}, In, Out, kind="tool", description="翻倍", timeout_s=5, retries=1)
+    reg.apply({"double": {"description": "改过的说明", "timeout_s": 12, "retries": 0, "enabled": False}, "missing": {}})
+    info = reg.describe()[0]
+    assert info["description"] == "改过的说明" and info["timeout_s"] == 12 and info["retries"] == 0
+    assert info["enabled"] is False and reg.names() == []
+    with pytest.raises(CallError) as e:
+        reg.call("double", Trace(), x=1)
+    assert e.value.reason == "已停用" and e.value.retryable is False
+
+
 def test_registry_rejects_duplicate_and_describes():
     reg = Registry("owner-a")
     reg.register("t", lambda a: {"y": 1}, In, Out, kind="tool", description="d")

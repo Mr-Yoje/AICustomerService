@@ -19,7 +19,7 @@ _CID = re.compile(r"C\d{4}")
 SPEAKER_SYSTEM = (
     "你负责判断一句话是谁说的。customer=被催收的客户本人；agent=催收坐席（对客户说话的一方）；"
     "operator=内部运营人员（向系统查询客户、要报告、问能否外呼、下达发起或结束催收的指令）。"
-    "scene_type_hint 只是参考。\n"
+    "scene_type_hint 只是参考。若给出上一轮，那是这句话之前刚结束的至多两条对话，用来判断当前句在接谁的话。\n"
     '输出 json，例如 {"speaker": "customer", "confidence": 0.9}'
 )
 
@@ -109,10 +109,13 @@ class Understander:
             return None
         return "agent" if agent > operator else "operator"
 
-    def speaker(self, text: str, scene_type: str | None = None) -> SpeakerResult:
+    def speaker(self, text: str, scene_type: str | None = None, recent: list[dict] | None = None) -> SpeakerResult:
+        payload = {"text": text, "scene_type_hint": scene_type or ""}
+        if recent:
+            payload["上一轮"] = recent
         if self.llm.available:
             try:
-                out = self.llm.json("speaker", SPEAKER_SYSTEM, {"text": text, "scene_type_hint": scene_type or ""})
+                out = self.llm.json("speaker", SPEAKER_SYSTEM, payload)
                 sp, conf = out.get("speaker"), _unit(out.get("confidence"), 0.0)
                 if sp in ("customer", "agent", "operator") and conf >= self.low:
                     return SpeakerResult(speaker=sp, confidence=conf, method="大模型")

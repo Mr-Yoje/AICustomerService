@@ -1,11 +1,12 @@
 {
-  "session_id": "S-7bf5e7e1",
+  "session_id": "S-92435b33",
   "mode": "人工接管",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "情绪感知+人工接管",
   "reply": "非常抱歉给您带来困扰，频繁来电可能让您不适。您的反馈我已经记下，后续会控制联系频次。账单可以改到您方便的时间再沟通，您看哪个时间段合适？\n好的，这就为您转接人工坐席。您刚才说明的情况和账户信息已同步给坐席同事，不需要再重复，请稍候，预计30秒内接通。",
-  "customer_id": "C0006",
+  "usage": null,
+  "customer_id": "C**06",
   "hit_rules": [],
   "compliance": [
     {
@@ -24,7 +25,7 @@
   "willingness_level": "中",
   "strategy": "提交结清减免申请",
   "handoff": true,
-  "handoff_package_id": "ART-c5bcf756",
+  "handoff_package_id": "ART-2577495c",
   "end_reason": null,
   "needs_review": true,
   "review_reasons": [
@@ -33,11 +34,12 @@
   "key_points": [
     "客户意图：要求转人工",
     "情绪：愤怒（强度0.70）",
-    "还款意愿：54分（中）",
+    "识别置信度：0.95",
+    "还款意愿：54分（中，置信度0.85）",
     "建议策略：提交结清减免申请",
     "转人工：客户要求转人工"
   ],
-  "trace_id": "TR-f062514de2",
+  "trace_id": "TR-b7426a8e7f",
   "trace": [
     {
       "step": "route",
@@ -57,7 +59,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },
@@ -70,17 +72,17 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0006"
+          "customer_id": "C**06"
         },
         "output": {
-          "customer_id": "C0006",
+          "customer_id": "C**06",
           "profile": {
-            "customer_id": "C0006",
-            "customer_name": "客户0006",
-            "age": 32,
-            "occupation": "司机",
-            "monthly_income": 14149.0,
-            "credit_score": 592,
+            "customer_id": "C**06",
+            "customer_name": "**",
+            "age": "**",
+            "occupation": "**",
+            "monthly_income": "**",
+            "credit_score": "**",
             "region": "华南",
             "customer_level": "B"
           },
@@ -171,10 +173,10 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0006"
+          "customer_id": "C**06"
         },
         "output": {
-          "customer_id": "C0006",
+          "customer_id": "C**06",
           "items": [
             {
               "overdue_id": "O0028",
@@ -222,7 +224,7 @@
             }
           ],
           "total_amount": 14000.0,
-          "suggestion": "建议优先处理 O0028（信用卡分期，逾期180天，欠款5000元）",
+          "suggestion": "建议优先处理 O0028（信用卡分期，逾期180天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": [
             "O0028 关联的贷款 L0013 在贷款表中不属于该客户，需人工复核",
@@ -243,11 +245,11 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0006",
+          "customer_id": "C**06",
           "day": "2026-10-24"
         },
         "output": {
-          "customer_id": "C0006",
+          "customer_id": "C**06",
           "day": "2026-10-24",
           "count": 0
         }
@@ -263,10 +265,10 @@
         "kind": "tool",
         "attempt": 1,
         "input": {
-          "customer_id": "C0006"
+          "customer_id": "C**06"
         },
         "output": {
-          "customer_id": "C0006",
+          "customer_id": "C**06",
           "score": 54,
           "level": "中",
           "factors": [
@@ -293,7 +295,7 @@
                 "O0022",
                 "O0028"
               ],
-              "note": "最长逾期180天，总欠款14000元，为月收入的0.99倍"
+              "note": "最长逾期180天，总欠款**元，为月收入的0.99倍"
             },
             {
               "name": "行为信号",
@@ -338,9 +340,9 @@
               "weight": 0.15,
               "contribution": 8.46,
               "evidence": [
-                "C0006"
+                "C**06"
               ],
-              "note": "信用评分592，客户等级B"
+              "note": "信用评分**，客户等级B"
             }
           ],
           "adjustments": [],
@@ -360,7 +362,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-7bf5e7e1"
+        "session_id": "S-92435b33"
       },
       "ms": 0
     },
@@ -392,7 +394,7 @@
           "method": "大模型"
         }
       },
-      "ms": 907
+      "ms": 754
     },
     {
       "step": "understand",
@@ -467,106 +469,14 @@
           }
         }
       },
-      "ms": 2
+      "ms": 5
     },
     {
       "step": "call",
       "name": "willingness_update",
       "status": "ok",
       "detail": {
-        "owner": "collection:consumer_finance",
-        "kind": "skill",
-        "attempt": 1,
-        "input": {
-          "intents": [
-            "要求转人工"
-          ]
-        },
-        "output": {
-          "customer_id": "C0006",
-          "score": 54,
-          "level": "中",
-          "factors": [
-            {
-              "name": "还款履约",
-              "score": 33.3,
-              "weight": 0.25,
-              "contribution": 8.33,
-              "evidence": [
-                "RP0025",
-                "RP0034",
-                "RP0030"
-              ],
-              "note": "按时还款1/3次"
-            },
-            {
-              "name": "逾期严重度",
-              "score": 50.6,
-              "weight": 0.2,
-              "contribution": 10.12,
-              "evidence": [
-                "O0006",
-                "O0017",
-                "O0022",
-                "O0028"
-              ],
-              "note": "最长逾期180天，总欠款14000元，为月收入的0.99倍"
-            },
-            {
-              "name": "行为信号",
-              "score": 90.0,
-              "weight": 0.15,
-              "contribution": 13.5,
-              "evidence": [
-                "B0001",
-                "B0015",
-                "B0020",
-                "B0029"
-              ],
-              "note": "正向4条，负向0条"
-            },
-            {
-              "name": "历史催收结果",
-              "score": 60.0,
-              "weight": 0.15,
-              "contribution": 9.0,
-              "evidence": [
-                "CH0021",
-                "CH0040",
-                "CH0007"
-              ],
-              "note": "正向2条，负向1条"
-            },
-            {
-              "name": "情绪",
-              "score": 41.0,
-              "weight": 0.1,
-              "contribution": 4.1,
-              "evidence": [
-                "E0002",
-                "E0013",
-                "E0036"
-              ],
-              "note": "配合(0.33)、羞愧(0.64)、抵触(0.87)"
-            },
-            {
-              "name": "信用画像",
-              "score": 56.4,
-              "weight": 0.15,
-              "contribution": 8.46,
-              "evidence": [
-                "C0006"
-              ],
-              "note": "信用评分592，客户等级B"
-            }
-          ],
-          "adjustments": [],
-          "confidence": 0.85,
-          "needs_review": true,
-          "review_reasons": [
-            "存在4条数据冲突（如 O0006）"
-          ]
-        }
+        "source": "前置工具"
       },
       "ms": 0
     },
@@ -596,7 +506,7 @@
       "status": "ok",
       "detail": {
         "reason": "客户要求转人工",
-        "package": "ART-c5bcf756"
+        "package": "ART-2577495c"
       },
       "ms": 0
     }

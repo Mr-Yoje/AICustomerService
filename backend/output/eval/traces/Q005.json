@@ -4,8 +4,9 @@
   "speaker": "agent",
   "speaker_method": "大模型",
   "system_intent": "合规检测",
-  "reply": "[合规拦截] 命中 R002（威胁，严重）：话术中不得含有威胁性表述；证据「上门催收」；处置：人工接管\n建议改写：您好，为避免逾期影响您的征信记录，建议您今日尽快处理还款，如有疑问可随时联系我们。",
-  "customer_id": "C0005",
+  "reply": "[合规拦截] 命中 R002（威胁，严重）：话术中不得含有威胁性表述；证据「上门催收」；处置：人工接管\n建议改写：请您尽快处理还款事宜，逾期可能影响个人征信，如有疑问可联系官方客服。",
+  "usage": null,
+  "customer_id": "C**05",
   "hit_rules": [
     "R002"
   ],
@@ -22,7 +23,7 @@
           "action": "人工接管",
           "method": "关键词",
           "evidence": "上门催收",
-          "confidence": 1.0
+          "confidence": 0.8
         }
       ],
       "block": true,
@@ -42,7 +43,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-1a1d2e5a97",
+  "trace_id": "TR-1dbf818a8c",
   "trace": [
     {
       "step": "route",
@@ -62,7 +63,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },

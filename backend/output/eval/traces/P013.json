@@ -4,8 +4,9 @@
   "speaker": "agent",
   "speaker_method": "大模型",
   "system_intent": "合规检测",
-  "reply": "[合规拦截] 命中 R003（虚假承诺，严重）：不得承诺未授权的减免或延期；证据「剩下的我帮你全部免掉，罚息利息都不用管，我跟领导已经说好了」；处置：话术拦截\n建议改写：您好，请按合同约定及时还款，如有困难可通过官方渠道咨询协商，具体以正式审批为准。",
-  "customer_id": "C0027",
+  "reply": "[合规拦截] 命中 R003（虚假承诺，严重）：不得承诺未授权的减免或延期；证据「剩下的我帮你全部免掉，罚息利息都不用管，我跟领导已经说好了」；处置：话术拦截\n建议改写：请尽快处理逾期欠款，具体还款方案以官方渠道确认为准，我司不会通过个人作出减免承诺。",
+  "usage": null,
+  "customer_id": "C**27",
   "hit_rules": [
     "R003"
   ],
@@ -42,7 +43,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-596de2224c",
+  "trace_id": "TR-515f8898ed",
   "trace": [
     {
       "step": "route",
@@ -62,7 +63,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },

@@ -4,6 +4,7 @@ import pytest
 
 from cagent import settings
 from cagent.agents.main import MODE_COLLECTION, MODE_HANDOFF, MODE_OPERATOR, MainAgent
+from cagent.llm import FakeLLM
 from cagent.agents.ops import SKILL_NAMES, TOOL_NAMES
 from cagent.cases import CaseStore
 from cagent.config_center import ConfigCenter
@@ -28,6 +29,24 @@ def test_main_registry_has_no_query_tools(main):
     assert (TOOL_NAMES | SKILL_NAMES) <= set(main.ops.registry.names())
 
 
+def test_lost_contact_repair_uses_customer_history(main, db_conn):
+    from cagent import db
+    db.insert_generated(db_conn, "fact_call_history", {
+        "call_id": "CH-LOST", "customer_id": "C0001", "call_time": "2026-10-20 09:00",
+        "call_method": "电话", "talk_summary": "无人接听", "call_result": "无人接听", "agent_id": "A01",
+    }, None)
+    db.insert_generated(db_conn, "fact_user_behavior", {
+        "behavior_id": "B-LOST", "customer_id": "C0001", "behavior_type": "APP登录",
+        "behavior_time": "2025-01-01 08:00", "behavior_detail": "长期未再登录",
+    }, None)
+    db_conn.commit()
+    t = main.handle("该客户连续多次无人接听、APP已长期未登录，请给出失联修复方案。",
+                    role="operator", customer_id="C0001", now=NOW)
+    assert t.speaker == "operator" and "查询客户画像或欠款" not in t.reply
+    assert "C0001" in t.reply and "无人接听" in t.reply and "修复" in t.reply
+    assert any(e.get("step") == "call" for e in t.trace)
+
+
 def test_quiet_hours_question(main):
     t = main.handle("现在晚上11点了，能给C0003打电话吗？", now=NOW)
     assert t.speaker == "operator" and t.system_intent == "合规检测"
@@ -43,6 +62,27 @@ def test_clear_speaker_beats_selected_role(main):
 def test_selected_role_only_when_speaker_unclear(main):
     t = main.handle("你好", role="operator", customer_id="C0004", now=NOW)
     assert t.speaker == "operator" and t.speaker_method == "显式角色"
+
+
+def test_second_turn_speaker_sees_previous_round(db_conn, db_path):
+    def responder(system, user):
+        if system.startswith("任务代号：speaker"):
+            if "可以先还一笔吗" in user and "上一轮" not in user:
+                return {"speaker": "agent", "confidence": 0.95}
+            return {"speaker": "customer", "confidence": 0.95}
+        if system.startswith("任务代号：understand"):
+            return {"customer_intent": "其他", "emotion": "平静", "emotion_intensity": 0.2, "confidence": 0.9}
+        if system.startswith("任务代号：reply"):
+            return {"reply": "可以，我们先看其中一笔。"}
+        return {"hits": []}
+
+    agent = MainAgent(db_conn, db_path=db_path, config_dir=settings.CONFIG_DIR, llm_client=FakeLLM(responder),
+                      sync_post=True)
+    first = agent.handle("我手头紧，想商量还款", role="customer", customer_id="C0003", now=NOW)
+    assert first.mode == MODE_COLLECTION
+    second = agent.handle("可以先还一笔吗", session_id=first.session_id, role="customer", now=NOW)
+    assert second.speaker == "customer" and second.mode == MODE_COLLECTION
+    assert "先看其中一笔" in second.reply
 
 
 def test_agent_speech_audit(main, db_conn):

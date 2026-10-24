@@ -10,7 +10,7 @@ from .. import db
 from ..audit import write_audit, write_event
 from ..cases import CaseStore
 from ..compliance import CheckResult, ComplianceEngine, contact_count_on
-from ..config_center import ConfigCenter
+from ..config_center import ConfigCenter, ConfigError, registry_overrides
 from ..desensitize import display_mask
 from ..llm import GuardedLLM, LLMError
 from ..loans import LoanPriority, prioritize
@@ -28,9 +28,12 @@ SKILL_NAMES = {"customer_report", "summary_report", "collection_eval_report", "c
 _THIRD_PARTY = re.compile(r"家人|父母|亲戚|朋友|同事|领导")
 REWRITE_SYSTEM = (
     "你是催收合规质检员，把违规话术改写为合规表述：保留提醒还款的业务意图，后果只能客观说明（如影响征信），"
-    "去掉威胁、辱骂、虚假承诺、冒充身份、骚扰亲友、误导等内容；不超过 80 字；尖括号占位符原样保留。\n"
+    "去掉威胁、辱骂、虚假承诺、冒充身份、骚扰亲友、误导等内容；"
+    "不得保留第三方姓名、先生或女士称谓、工作单位和欠款金额；不超过 80 字；尖括号占位符原样保留。\n"
     '输出 json，例如 {"reply": "……"}'
 )
+_PRIVACY_RULES = {"R006", "R009"}
+_DISCLOSURE = re.compile(r"[\u4e00-\u9fff]{1,2}(?:先生|女士)|(?<![\dA-Za-z_])\d+(?:,\d{3})*(?:\.\d+)?\s*元")
 
 
 class LookupResult(BaseModel):
@@ -150,7 +153,14 @@ class OpsAgent:
                    description="本月催收评估报告，按单个客户或全部客户")
         r.register("compliance_audit_report", self._audit_report, ScopedReportIn, ReportOut, kind="skill",
                    description="合规审计报告，按单个客户或全部客户")
+        r.apply(self._registry_items())
         return r
+
+    def _registry_items(self) -> dict:
+        try:
+            return registry_overrides(self.cc.get("registry")[0])
+        except ConfigError:
+            return {}
 
     def _profile(self, a: CidIn) -> ProfileOut:
         cols = [c for c, _ in db.BUSINESS_TABLES["dim_customer"]]
@@ -189,6 +199,8 @@ class OpsAgent:
             return self._answer_report(text, customer_id, now, trace)
         if intent == "合规问答":
             return self._answer_compliance(text, customer_id, now, trace, session_id)
+        if intent == "失联修复":
+            return self._answer_lost_contact(customer_id, trace)
         raise ValueError(f"运营子 Agent 不处理该意图: {intent}")
 
     def _answer_overdues(self, customer_id: str, trace: Trace) -> AnswerResult:
@@ -203,6 +215,20 @@ class OpsAgent:
         lines += [f"注意：{c}" for c in lp.conflicts]
         return AnswerResult(reply="\n".join(lines), needs_review=bool(lp.conflicts), review_reasons=lp.conflicts)
 
+    def _answer_lost_contact(self, customer_id: str, trace: Trace) -> AnswerResult:
+        self.lookup(customer_id)
+        self.registry.call("get_customer_profile", trace, customer_id=customer_id)
+        missed = self.conn.execute(
+            "SELECT COUNT(*) FROM fact_call_history WHERE customer_id=? AND call_result='无人接听'",
+            (customer_id,)).fetchone()[0]
+        last_login = self.conn.execute(
+            "SELECT behavior_time FROM fact_user_behavior WHERE customer_id=? AND behavior_type='APP登录' "
+            "ORDER BY behavior_time DESC LIMIT 1", (customer_id,)).fetchone()
+        login = f"最近 APP 登录 {last_login[0]}" if last_login else "无 APP 登录记录"
+        reply = (f"{customer_id} 失联修复：通话中无人接听 {missed} 次，{login}。"
+                 "建议暂停连续拨打同一号码，改约白天联系，并改用短信或 App 消息触达，请客户本人回拨。")
+        return AnswerResult(reply=reply)
+
     def _answer_profile(self, customer_id: str, trace: Trace) -> AnswerResult:
         self.lookup(customer_id)
         p = self.registry.call("get_customer_profile", trace, customer_id=customer_id)
@@ -215,6 +241,16 @@ class OpsAgent:
                  + "、".join(f"{f.name}{f.score:.0f}分" for f in top) + "。")
         if w.needs_review:
             reply += "需人工复核：" + "；".join(w.review_reasons)
+        remembered = self.memory.get("customer", customer_id, "last_willingness")
+        if remembered:
+            reply += f"上次会话还款意愿{remembered.get('score')}分（{remembered.get('level')}）。"
+        contact = self.memory.get("customer", customer_id, "last_contact")
+        if contact:
+            reply += f"上次联系{contact.get('time')}，结果{contact.get('result')}。"
+        promises = self.memory.get("customer", customer_id, "open_promises") or []
+        if promises:
+            last = promises[-1]
+            reply += f"未结承诺：{last.get('date') or '近期'}还款{last.get('amount') or ''}。"
         return AnswerResult(reply=reply, willingness_score=w.score, willingness_level=w.level,
                             needs_review=w.needs_review, review_reasons=w.review_reasons)
 
@@ -333,7 +369,11 @@ class OpsAgent:
         label = "检查点一：坐席话术审核" if scene == "话术审核" else "检查点一：人工坐席话术"
         trace.add("guard", label, "ok" if result.passed else "warn", hits=_hit_ids([result]), degraded=result.degraded)
         if result.hits:
-            reply = _violation_text(result) + f"\n建议改写：{self._rewrite(text, result, extra_rules, rewrite_fallback, trace)}"
+            if any(h.rule_id in _PRIVACY_RULES for h in result.hits):
+                reply = _DISCLOSURE.sub("", _violation_text(result))
+                reply += "\n建议改写：请只与客户本人沟通账单，不要提及他人的姓名和欠款。"
+            else:
+                reply = _violation_text(result) + f"\n建议改写：{self._rewrite(text, result, extra_rules, rewrite_fallback, trace)}"
         else:
             reply = "[合规通过] 未命中合规规则。规范开场可参考：" + opening
         return SpeechReview(passed=result.passed, reply=reply, hit_rules=_hit_ids([result]), compliance=[result],
@@ -345,7 +385,7 @@ class OpsAgent:
                 out = self.llm.json("rewrite", REWRITE_SYSTEM, {
                     "原话术": text, "违规": [f"{h.rule_id} {h.rule_content}（{h.evidence}）" for h in result.hits]})
                 candidate = str(out.get("reply") or "").strip()
-                if candidate and self.engine.check_agent_speech(
+                if candidate and not _DISCLOSURE.search(candidate) and "转告" not in candidate and self.engine.check_agent_speech(
                         candidate, extra_rules=extra_rules, use_semantic=False).passed:
                     trace.add("reply", "改写建议", source="大模型")
                     return candidate

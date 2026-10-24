@@ -1,0 +1,23 @@
+# 工具与 Skill 的说明、超时、重试和启用。名称、类别、归属、输入输出由代码注册，不能在这里增删。
+items:
+  - {name: get_customer_profile, owner: ops, kind: tool, description: 客户画像：基本信息、近期行为、情绪、还款记录与长期记忆, timeout_s: 5, retries: 1, enabled: true}
+  - {name: get_overdues, owner: ops, kind: tool, description: 客户全部逾期记录及处理优先级, timeout_s: 5, retries: 1, enabled: true}
+  - {name: get_contact_count_today, owner: ops, kind: tool, description: 客户指定日期已被联系次数（不含外呼拦截与客户进线）, timeout_s: 5, retries: 1, enabled: true}
+  - {name: get_willingness, owner: ops, kind: tool, description: 对话前还款意愿评分, timeout_s: 5, retries: 1, enabled: true}
+  - {name: customer_report, owner: ops, kind: skill, description: 单客户催收报告, timeout_s: 5, retries: 1, enabled: true}
+  - {name: summary_report, owner: ops, kind: skill, description: 月度催收汇总报告, timeout_s: 5, retries: 1, enabled: true}
+  - {name: collection_eval_report, owner: ops, kind: skill, description: 本月催收评估报告，按单个客户或全部客户, timeout_s: 5, retries: 1, enabled: true}
+  - {name: compliance_audit_report, owner: ops, kind: skill, description: 合规审计报告，按单个客户或全部客户, timeout_s: 5, retries: 1, enabled: true}
+  - {name: get_my_overdues, owner: collection, kind: tool, description: 查询当前客户的全部逾期记录, timeout_s: 5, retries: 1, enabled: true}
+  - {name: get_my_templates, owner: collection, kind: tool, description: 查询本业务可用的分期模板, timeout_s: 5, retries: 1, enabled: true}
+  - {name: record_promise, owner: collection, kind: tool, description: 记录客户的还款承诺, timeout_s: 5, retries: 0, enabled: true}
+  - {name: record_grace_request, owner: collection, kind: tool, description: 记录客户的宽限请求, timeout_s: 5, retries: 0, enabled: true}
+  - {name: submit_waiver_request, owner: collection, kind: tool, description: 提交减免申请（只登记，不承诺结果）, timeout_s: 5, retries: 0, enabled: true}
+  - {name: reduce_contact, owner: collection, kind: tool, description: 记录客户降低联系频次的诉求, timeout_s: 5, retries: 0, enabled: true}
+  - {name: request_handoff, owner: collection, kind: tool, description: 向主控申请转人工, timeout_s: 5, retries: 1, enabled: true}
+  - {name: intent_emotion, owner: collection, kind: skill, description: 识别客户意图、情绪与关键信息, timeout_s: 40, retries: 0, enabled: true}
+  - {name: willingness_update, owner: collection, kind: skill, description: 结合本次对话表态更新还款意愿评分, timeout_s: 5, retries: 1, enabled: true}
+  - {name: installment_plan, owner: collection, kind: skill, description: 按适用条件生成或调整分期方案, timeout_s: 5, retries: 1, enabled: true}
+  - {name: loan_priority, owner: collection, kind: skill, description: 当前客户多笔逾期的处理优先级, timeout_s: 5, retries: 1, enabled: true}
+  - {name: generate_reply, owner: collection, kind: skill, description: 按阶段目标与事实生成坐席话术, timeout_s: 40, retries: 0, enabled: true}
+  - {name: dialog_summary, owner: collection, kind: skill, description: 对话小结, timeout_s: 5, retries: 1, enabled: true}

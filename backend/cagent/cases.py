@@ -95,7 +95,9 @@ class CaseStore:
         for m in older:
             intent = m["meta"].get("intent")
             parts.append(f"第{m['turn']}句 {m['role']}{'（' + intent + '）' if intent else ''}：{m['text'][:20]}")
-        return {"recent": [{"role": m["role"], "text": m["text"]} for m in recent], "summary": "；".join(parts)}
+        summary = "；".join(parts)
+        return {"recent": [{"role": m["role"], "text": m["text"][:200]} for m in recent],
+                "summary": summary[-400:]}
 
     def add_artifact(self, case_id: str | None, session_id: str | None, kind: str, content, now: datetime) -> str:
         aid = _uid("ART")

@@ -5,7 +5,8 @@
   "speaker_method": "大模型",
   "system_intent": "提醒催收",
   "reply": "[合规通过] 未命中合规规则。规范开场可参考：您好，我是XX金融贷后服务专员，工号AI01。沟通账单前需要先核实身份，麻烦您提供一下身份证号后四位。核实完成后，我会跟您说明账单逾期情况，也想了解一下您这边的还款打算。",
-  "customer_id": "C0001",
+  "usage": null,
+  "customer_id": "C**01",
   "hit_rules": [],
   "compliance": [
     {
@@ -29,7 +30,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-7b7a184122",
+  "trace_id": "TR-cf5ff532f0",
   "trace": [
     {
       "step": "route",
@@ -49,7 +50,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "97575e55d5"
+        "version": "53d4517f26"
       },
       "ms": 0
     },

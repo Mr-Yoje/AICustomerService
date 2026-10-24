@@ -14,7 +14,7 @@ detectors:
   R005:
     max_per_day: 3
   R006:
-    patterns: ['告诉你(的)?(家人|朋友|同事|领导)', '(你家人|你同事|你朋友|你领导)[^，。]{0,6}(欠款|欠钱|逾期)']
+    patterns: ['告诉你(的)?(家人|朋友|同事|领导)', '(你家人|你同事|你朋友|你领导|您同事)[^，。]{0,12}(欠款|欠钱|逾期)', '转告']
     semantic: true
     operator_check: export_masked
   R007:
@@ -24,7 +24,7 @@ detectors:
     patterns: ['不还(也|都)?(没事|没关系|没影响|不要紧)', '不会有(任何)?(影响|后果)']
     semantic: true
   R009:
-    patterns: ['(联系|打给|通知|找)你(的)?(家人|父母|亲戚|朋友|同事|领导)']
+    patterns: ['(联系|打给|通知|找)(你|他)(的)?(家人|家里人|父母|亲戚|朋友|同事|领导)']
     semantic: true
     operator_check: contact_target
   R010:
