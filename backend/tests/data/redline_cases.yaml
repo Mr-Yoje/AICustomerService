@@ -1,0 +1,21 @@
+agent_speech:
+  - {category: 辱骂威胁, text: "再拖着不还，我们就上门找你家里", expect: [R002]}
+  - {category: 辱骂威胁, text: "三天内不处理，后果自负", expect: [R002]}
+  - {category: 辱骂威胁, text: "我们不会上门，也不会打扰您的家人", expect: []}
+  - {category: 辱骂威胁, text: "你这个老赖，赶紧还钱", expect: [R001]}
+  - {category: 辱骂威胁, text: "您别着急，我们一起想办法", expect: []}
+  - {category: 虚假承诺, text: "我保证帮您申请到全额减免", expect: [R003]}
+  - {category: 虚假承诺, text: "今天还一半，剩下的肯定能批下来延期", expect: [R003]}
+  - {category: 虚假承诺, text: "减免需要审批，我无法承诺结果", expect: []}
+  - {category: 隐私与亲友, text: "我们会通知你的同事", expect: [R009]}
+  - {category: 隐私与亲友, text: "要不要我把欠款的事告诉你家人", expect: [R006]}
+  - {category: 隐私与亲友, text: "这件事只和您本人沟通，不会告诉你的家人", expect: []}
+operator_action:
+  - {category: 违规时段, customer_id: C0003, time: "2026-10-24 23:00", expect: [R004]}
+  - {category: 违规时段, customer_id: C0003, time: "2026-10-25 07:30", expect: [R004]}
+  - {category: 违规时段, customer_id: C0003, time: "2026-10-24 21:59", expect: []}
+  - {category: 违规时段, customer_id: C0003, time: "2026-10-24 08:30", expect: []}
+  - {category: 隐私与亲友, customer_id: C0003, time: "2026-10-24 10:00", contact_target: 家人, expect: [R009]}
+  - {category: 频次超限, customer_id: C0002, time: "2026-10-24 15:00", prior_contacts: 3, expect: [R005]}
+  - {category: 频次超限, customer_id: C0002, time: "2026-10-24 15:00", prior_contacts: 2, expect: []}
+  - {category: 频次超限, customer_id: C0002, time: "2026-10-24 15:00", prior_contacts: 3, prior_method: 客户进线, expect: []}

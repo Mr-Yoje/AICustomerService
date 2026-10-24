@@ -1,0 +1,68 @@
+pack_id: consumer_finance
+name: 通用消费金融催收
+match:
+  loan_types: [消费贷, 现金贷, 装修贷, 教育贷, 信用卡分期]
+  default: true
+pre_tools:
+  - {tool: get_customer_profile, on_failure: degrade}
+  - {tool: get_overdues, on_failure: block}
+  - {tool: get_contact_count_today, on_failure: block}
+  - {tool: get_willingness, on_failure: degrade}
+gates: [R004, R005]
+stages:
+  - {id: 核身, goal: 表明身份与工号并核验客户本人身份, next: 告知逾期}
+  - {id: 告知逾期, goal: 说明逾期金额与天数并询问还款意愿, next: 了解原因}
+  - {id: 了解原因, goal: 了解还款困难原因与可承受金额, next: 协商}
+  - {id: 协商, goal: 提供合规的分期或还款方案并协商调整, next: 确认承诺}
+  - {id: 确认承诺, goal: 确认还款金额、日期或分期方案, next: 结束}
+  - {id: 结束, goal: 礼貌结束并告知后续跟进, next: null}
+stage_advance:
+  要求分期: 协商
+  要求宽限: 了解原因
+  要求减免: 协商
+  承诺还款: 确认承诺
+intent_actions:
+  要求分期: [installment_plan]
+  要求宽限: [record_grace_request, installment_plan]
+  要求减免: [submit_waiver_request, installment_plan]
+  询问欠款: [loan_priority]
+  承诺还款: [record_promise]
+  投诉: [reduce_contact]
+  要求转人工: [request_handoff]
+  拒绝还款: []
+  质疑身份: []
+  其他: []
+skill_params:
+  installment_plan:
+    templates: [T001, T002, T003, T004, T005, T006]
+extra_rules: []
+handoff:
+  max_refusals: 2
+  emotion: {types: [愤怒], min_intensity: 0.9}
+  low_confidence_turns: 2
+speech:
+  agent_id: AI01
+  wait_seconds: 30
+  identity: "您好，我是XX金融贷后服务专员，工号{agent_id}。"
+  verify: "沟通账单前需要先核实身份，麻烦您提供一下身份证号后四位。"
+  purpose: "核实完成后，我会跟您说明账单逾期情况，也想了解一下您这边的还款打算。"
+  tone: 礼貌、克制、先共情再说明，不施压
+  forbidden_words: [老赖, 欠债不还, 后果自负]
+  rewrite_fallback: "这笔账单目前已经逾期，继续拖延会影响您的征信记录。如果一次性还款有困难，我们可以一起看看分期等安排。"
+  templates:
+    opening: "{identity}{verify}{purpose}"
+    clarify: "抱歉，刚才没有听清您的意思，您可以再说一遍吗？"
+    handoff: "好的，这就为您转接人工坐席。您刚才说明的情况和账户信息已同步给坐席同事，不需要再重复，请稍候，预计{wait_seconds}秒内接通。"
+    default: "关于您的逾期账单，我们希望和您一起找到合适的还款安排，请问您现在方便沟通吗？"
+    提醒催收: "{identity}您目前的逾期欠款共{principal}，请问您近期是否方便安排还款？"
+    还款意愿评估: "理解您手头紧张。请问您预计下个月几号发工资？宽限申请我已经记下，同时可以安排分期：{plan_brief}，避免逾期天数继续增加影响信用。您看是否方便了解一下？"
+    分期方案协商: "可以的，我们提供分期还款。请问您每月可承受的还款金额大约是多少？我会按欠款{principal}和您的承受能力推荐期数，目前可参考：{plan_brief}。确认后我会生成协商记录给您核对。"
+    情绪感知: "非常抱歉给您带来困扰，频繁来电可能让您不适。您的反馈我已经记下，后续会控制联系频次。账单可以改到您方便的时间再沟通，您看哪个时间段合适？"
+    合规检测: "感谢您的还款意愿。减免全部利息我无法直接承诺，需要提交审批。我可以先帮您提交申请，同时推荐分期：{plan_brief}。您看是否可以？"
+    多贷款管理: "已为您查到名下{loan_count}笔逾期：{loan_list}。{suggestion}，您看是否先处理这一笔？"
+    承诺还款: "好的，已记录您的还款安排：{promise_brief}。请按约定时间还款，如有变化可以随时联系我们。"
+    询问还款时间: "可以按这个方案安排：{plan_brief}。请问您打算哪一天还款？"
+    确认方案: "方案是{plan_brief}，还款时间{repay_date}。请确认是否按这个方案和时间还款。"
+    结束确认: "好的，已确认您的还款安排：{plan_brief}，还款时间{repay_date}。请按约定时间还款，这次沟通先到这里。"
+report_sections: [逾期概况, 还款意愿评估, 情绪感知, 合规审计, 协商记录, 建议策略]
+post_tasks: [write_call_record, write_behavior, write_emotion, refresh_profile, generate_report, create_todos]

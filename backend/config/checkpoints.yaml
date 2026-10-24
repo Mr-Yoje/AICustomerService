@@ -1,0 +1,51 @@
+negations: ["不会", "不能", "无法", "没法", "没办法", "不可", "无权", "不得", "不予", "并非", "不是"]
+semantic_min_confidence: 0.7
+detectors:
+  R001:
+    keywords: ["傻逼", "混蛋", "废物", "去死", "不要脸", "滚蛋", "你算什么东西", "老赖"]
+  R002:
+    patterns: ['上门(催收|找你|拜访)?', '起诉你', '抓你', '坐牢', '曝光你', '爆你通讯录', '让你好看', '后果自负', '找(到)?你(的)?(单位|公司|家里|家人|领导)']
+    semantic: true
+  R003:
+    patterns: ['(保证|一定|肯定|承诺|包)[^，。！？,.!?]{0,8}(减免|免息|免除|延期|通过|批下来|批准)', '(全部|全额)(减免|免除)']
+    semantic: true
+  R004:
+    window: {start: "22:00", end: "08:00"}
+  R005:
+    max_per_day: 3
+  R006:
+    patterns: ['告诉你(的)?(家人|朋友|同事|领导)', '(你家人|你同事|你朋友|你领导)[^，。]{0,6}(欠款|欠钱|逾期)']
+    semantic: true
+    operator_check: export_masked
+  R007:
+    patterns: ['(我是|我们是|这里是)[^，。]{0,4}(公安|警察|法院|检察院|派出所)']
+    semantic: true
+  R008:
+    patterns: ['不还(也|都)?(没事|没关系|没影响|不要紧)', '不会有(任何)?(影响|后果)']
+    semantic: true
+  R009:
+    patterns: ['(联系|打给|通知|找)你(的)?(家人|父母|亲戚|朋友|同事|领导)']
+    semantic: true
+    operator_check: contact_target
+  R010:
+    pressure_patterns: ['尽快还款', '马上还', '立即还', '今天必须', '必须还', '赶紧还']
+    max_per_turn: 2
+checkpoints:
+  agent_speech:
+    name: 坐席话术
+    rules: [R001, R002, R003, R006, R007, R008, R009, R010]
+    action_overrides: {}
+    max_rewrites: 2
+  operator_action:
+    name: 运营操作
+    rules: [R004, R005, R006, R009]
+    action_overrides:
+      R004: 阻断外呼并提示下次可外呼时间
+      R005: 停止本次联系
+  customer_input:
+    name: 客户输入
+    signals:
+      辱骂: ["傻逼", "混蛋", "滚", "去死", "骗子"]
+      投诉: ["投诉", "举报", "12378", "曝光你们"]
+      明确拒绝: ["不还", "不会还", "别再打", "爱咋咋地"]
+      要求转人工: ["转人工", "人工客服", "真人", "不跟你们机器人", "不跟机器人"]

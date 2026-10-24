@@ -1,0 +1,25 @@
+scoring:
+  weights: {repayment: 0.25, severity: 0.20, behavior: 0.15, call_result: 0.15, emotion: 0.10, credit: 0.15}
+  behavior: {positive: [承诺还款, 查看账单, 部分还款, APP登录, 联系客服], negative: [拒绝沟通, 修改资料], step: 10}
+  call_result: {positive: [承诺还款, 部分还款, 协商分期], negative: [挂断, 拒绝沟通, 无人接听], step: 10}
+  emotion: {positive: [配合], negative: [抵触, 冷漠, 愤怒], recent: 5}
+  credit: {min: 350, max: 850, level_scores: {A: 100, B: 75, C: 50, D: 25}, level_weight: 0.3}
+  severity: {max_days: 365, debt_income_cap: 2.0}
+  dialog_adjust: {承诺还款: 10, 要求分期: 5, 要求宽限: 0, 拒绝还款: -15, 投诉: -5}
+  levels: {high: 70, medium: 40}
+  review: {min_confidence: 0.7, conflict_penalty: 0.15}
+strategies:
+  - {level: 高, max_days: 30, strategy: 温和提醒}
+  - {level: 高, strategy: 协商分期}
+  - {level: 中, max_days: 90, strategy: 协商分期}
+  - {level: 中, strategy: 提交结清减免申请}
+  - {level: 低, max_days: 60, strategy: 协商分期}
+  - {level: 低, strategy: 转人工重点跟进}
+installment:
+  affordability_ratio: 0.3
+  period_options: [3, 6, 12, 18, 24, 36]
+  max_plans: 3
+priority:
+  sort:
+    - {field: overdue_days, desc: true}
+    - {field: overdue_amount, desc: true}

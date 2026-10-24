@@ -1,0 +1,9 @@
+base_url: https://api.deepseek.com
+model: deepseek-flash
+timeout_s: 15
+max_retries: 1
+temperature: 0
+max_tokens: 800
+extra_body:
+  thinking:
+    type: disabled
