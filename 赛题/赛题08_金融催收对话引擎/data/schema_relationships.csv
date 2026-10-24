@@ -1,0 +1,10 @@
+﻿master_table,primary_key,slave_table,foreign_key,description
+dim_customer,customer_id,fact_overdue,customer_id,一个客户可有多笔逾期
+dim_loan,loan_id,fact_overdue,loan_id,一笔贷款可产生多次逾期
+dim_customer,customer_id,fact_call_history,customer_id,一个客户可被多次催收
+dim_customer,customer_id,fact_repayment,customer_id,一个客户可有多条还款记录
+dim_customer,customer_id,fact_user_behavior,customer_id,一个客户可有多条行为日志
+dim_customer,customer_id,fact_emotion_log,customer_id,一个客户可有多条情绪记录
+dim_compliance_rule,rule_id,fact_call_history,violated_rule_id,催收记录可关联违规规则
+dim_installment_template,template_id,fact_overdue,recommended_template_id,逾期记录可关联推荐分期方案
+fact_overdue,customer_id+loan_id,fact_call_history/fact_repayment,customer_id+loan_id,逾期催收与还款通过客户和贷款联合关联
