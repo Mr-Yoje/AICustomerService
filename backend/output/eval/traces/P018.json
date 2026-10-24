@@ -1,0 +1,46 @@
+{
+  "session_id": null,
+  "mode": "运营模式",
+  "speaker": "operator",
+  "speaker_method": "大模型",
+  "system_intent": "提醒催收",
+  "reply": "我可以帮您：查询客户画像或欠款、判断当前能否外呼、生成单客户或本月汇总催收报告、对客户发起或结束催收。请带上客户编号，例如「查询C0001的欠款」。",
+  "customer_id": "C0028",
+  "hit_rules": [],
+  "compliance": [],
+  "willingness_score": null,
+  "willingness_level": null,
+  "strategy": null,
+  "handoff": false,
+  "handoff_package_id": null,
+  "end_reason": null,
+  "needs_review": false,
+  "review_reasons": [],
+  "key_points": [],
+  "trace_id": "TR-5dc44e27f7",
+  "trace": [
+    {
+      "step": "route",
+      "name": "说话人判定",
+      "status": "ok",
+      "detail": {
+        "speaker": "operator",
+        "method": "大模型",
+        "confidence": 0.95
+      },
+      "ms": 0
+    },
+    {
+      "step": "understand",
+      "name": "运营意图",
+      "status": "ok",
+      "detail": {
+        "intent": "其他",
+        "customer_id": "C0028",
+        "method": "大模型",
+        "confidence": 0.85
+      },
+      "ms": 0
+    }
+  ]
+}

@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 backend/runtime/
-backend/output/
+backend/output/*
+!backend/output/eval/
 node_modules/
 .env
