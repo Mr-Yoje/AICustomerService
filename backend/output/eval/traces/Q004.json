@@ -1,5 +1,5 @@
 {
-  "session_id": "S-0118bc61",
+  "session_id": "S-0d6ff186",
   "mode": "人工接管",
   "speaker": "customer",
   "speaker_method": "大模型",
@@ -24,7 +24,7 @@
   "willingness_level": "中",
   "strategy": "协商分期",
   "handoff": true,
-  "handoff_package_id": "ART-f832729b",
+  "handoff_package_id": "ART-110cf9c2",
   "end_reason": null,
   "needs_review": true,
   "review_reasons": [
@@ -37,7 +37,7 @@
     "建议策略：协商分期",
     "转人工：客户情绪愤怒（强度0.90）超过阈值"
   ],
-  "trace_id": "TR-e8abe8f7cd",
+  "trace_id": "TR-670f22da4d",
   "trace": [
     {
       "step": "route",
@@ -369,7 +369,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-0118bc61"
+        "session_id": "S-0d6ff186"
       },
       "ms": 0
     },
@@ -401,7 +401,7 @@
           "method": "大模型"
         }
       },
-      "ms": 844
+      "ms": 937
     },
     {
       "step": "understand",
@@ -455,7 +455,7 @@
           }
         }
       },
-      "ms": 2
+      "ms": 3
     },
     {
       "step": "call",
@@ -592,7 +592,7 @@
       "status": "ok",
       "detail": {
         "reason": "客户情绪愤怒（强度0.90）超过阈值",
-        "package": "ART-f832729b"
+        "package": "ART-110cf9c2"
       },
       "ms": 0
     }

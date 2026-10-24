@@ -6,6 +6,30 @@ from scripts import compare_eval, redline_eval, run_eval
 NOW = datetime(2026, 10, 24, 10, 0)
 
 
+def test_prepare_syncs_collection_raw_data(tmp_path, monkeypatch):
+    from cagent import db, importer, settings
+
+    collection = tmp_path / "collection.db"
+    src = db.connect(collection)
+    importer.import_all(src, settings.DATA_DIR)
+    src.execute(
+        "INSERT INTO sessions(session_id, customer_id, mode, started_at) VALUES ('S-live', 'C0001', '催收对话模式', '2026-10-24T20:00:00')"
+    )
+    src.commit()
+    src.close()
+    eval_db = tmp_path / "eval.db"
+    monkeypatch.setattr(settings, "COLLECTION_DB_PATH", collection)
+    monkeypatch.setattr(settings, "DB_PATH", eval_db)
+    dest = db.connect(eval_db)
+    run_eval.prepare(dest, settings.COLLECTION_DB_PATH)
+    assert dest.execute("SELECT COUNT(*) FROM dim_customer").fetchone()[0] == 10
+    assert dest.execute("SELECT COUNT(*) FROM sessions").fetchone()[0] == 0
+    src = db.connect(collection)
+    assert src.execute("SELECT COUNT(*) FROM sessions").fetchone()[0] == 1
+    src.close()
+    dest.close()
+
+
 def test_run_eval_offline(db_conn, db_path, tmp_path):
     q = tmp_path / "q.csv"
     with q.open("w", encoding="utf-8-sig", newline="") as f:

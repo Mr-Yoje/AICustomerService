@@ -1,5 +1,5 @@
 {
-  "session_id": "S-f5ad7a7f",
+  "session_id": "S-7bf5e7e1",
   "mode": "人工接管",
   "speaker": "customer",
   "speaker_method": "大模型",
@@ -24,7 +24,7 @@
   "willingness_level": "中",
   "strategy": "提交结清减免申请",
   "handoff": true,
-  "handoff_package_id": "ART-e4aba970",
+  "handoff_package_id": "ART-c5bcf756",
   "end_reason": null,
   "needs_review": true,
   "review_reasons": [
@@ -37,7 +37,7 @@
     "建议策略：提交结清减免申请",
     "转人工：客户要求转人工"
   ],
-  "trace_id": "TR-179b31306b",
+  "trace_id": "TR-f062514de2",
   "trace": [
     {
       "step": "route",
@@ -160,7 +160,7 @@
           "memory": {}
         }
       },
-      "ms": 0
+      "ms": 1
     },
     {
       "step": "call",
@@ -351,7 +351,7 @@
           ]
         }
       },
-      "ms": 0
+      "ms": 1
     },
     {
       "step": "route",
@@ -360,7 +360,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-f5ad7a7f"
+        "session_id": "S-7bf5e7e1"
       },
       "ms": 0
     },
@@ -392,7 +392,7 @@
           "method": "大模型"
         }
       },
-      "ms": 755
+      "ms": 907
     },
     {
       "step": "understand",
@@ -596,7 +596,7 @@
       "status": "ok",
       "detail": {
         "reason": "客户要求转人工",
-        "package": "ART-e4aba970"
+        "package": "ART-c5bcf756"
       },
       "ms": 0
     }

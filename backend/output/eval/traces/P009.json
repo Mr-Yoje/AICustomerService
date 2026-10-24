@@ -1,3 +1,744 @@
 {
-  "error": "Traceback (most recent call last):\n  File \"D:\\Document\\26HackSong\\backend\\scripts\\run_eval.py\", line 34, in run\n    t = agent.handle(q.get(\"user_input\", \"\"), scene_type=q.get(\"scene_type\") or None,\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Document\\26HackSong\\backend\\cagent\\agents\\main.py\", line 120, in handle\n    return self._handle(text, session_id=session_id, role=role, scene_type=scene_type,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Document\\26HackSong\\backend\\cagent\\agents\\main.py\", line 169, in _handle\n    started = self.start_collection(cid, now, trace, channel=\"客户进线\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Document\\26HackSong\\backend\\cagent\\agents\\main.py\", line 190, in start_collection\n    looked = self.ops.lookup(customer_id)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\Document\\26HackSong\\backend\\cagent\\agents\\ops.py\", line 178, in lookup\n    raise ValueError(f\"客户不存在: {customer_id}\")\nValueError: 客户不存在: C0019\n"
+  "session_id": "S-a6b80b8c",
+  "mode": "催收对话模式",
+  "speaker": "customer",
+  "speaker_method": "大模型",
+  "system_intent": "情绪感知+分期方案协商",
+  "reply": "很抱歉让您感到焦虑，我理解失业带来的压力。您的情况可以协商分期，我先记录您的反馈。目前有一笔延期分期方案：12期，月供1545.05元，年化利率10.80%，手续费350.00元，总成本18890.56元；另有一次性结清方案，可申请减免违约金，需审批，不承诺结果。请问您每月可承受金额大概是多少？",
+  "customer_id": "C0019",
+  "hit_rules": [],
+  "compliance": [
+    {
+      "checkpoint": "agent_speech",
+      "passed": true,
+      "hits": [],
+      "block": false,
+      "handoff": false,
+      "degraded": false,
+      "signals": [],
+      "next_allowed": null,
+      "notes": []
+    }
+  ],
+  "willingness_score": 44,
+  "willingness_level": "中",
+  "strategy": "提交结清减免申请",
+  "handoff": false,
+  "handoff_package_id": null,
+  "end_reason": null,
+  "needs_review": true,
+  "review_reasons": [
+    "O0004 推荐模板 T005 与适用条件不符（逾期30天、信用评分465），已按适用条件重新匹配",
+    "O0015 推荐模板 T002 与适用条件不符（逾期45天、信用评分465），已按适用条件重新匹配",
+    "O0016 推荐模板 T002 与适用条件不符（逾期45天、信用评分465），已按适用条件重新匹配",
+    "O0025 推荐模板 T002 与适用条件不符（逾期15天、信用评分465），已按适用条件重新匹配",
+    "O0028 推荐模板 T002 与适用条件不符（逾期180天、信用评分465），已按适用条件重新匹配",
+    "O0039 推荐模板 T001 与适用条件不符（逾期60天、信用评分465），已按适用条件重新匹配",
+    "存在5条数据冲突（如 O0004）"
+  ],
+  "key_points": [
+    "客户意图：要求分期",
+    "情绪：焦虑（强度0.80）",
+    "推荐方案：T005 延期分期 12期，月供1545.05元",
+    "还款意愿：44分（中）",
+    "建议策略：提交结清减免申请"
+  ],
+  "trace_id": "TR-d4a0031ff4",
+  "trace": [
+    {
+      "step": "route",
+      "name": "说话人判定",
+      "status": "ok",
+      "detail": {
+        "speaker": "customer",
+        "method": "大模型",
+        "confidence": 0.98
+      },
+      "ms": 0
+    },
+    {
+      "step": "decide",
+      "name": "匹配业务包",
+      "status": "ok",
+      "detail": {
+        "loan_type": "教育贷",
+        "pack": "consumer_finance",
+        "version": "97575e55d5"
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_customer_profile",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C0019"
+        },
+        "output": {
+          "customer_id": "C0019",
+          "profile": {
+            "customer_id": "C0019",
+            "customer_name": "客户0019",
+            "age": 45,
+            "occupation": "公务员",
+            "monthly_income": 8242.0,
+            "credit_score": 465,
+            "region": "华南",
+            "customer_level": "D"
+          },
+          "behaviors": [
+            {
+              "behavior_id": "B0011",
+              "behavior_type": "拒绝沟通",
+              "behavior_time": "2025-10-05 17:54",
+              "behavior_detail": "客户联系客服申请延期",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0040",
+              "behavior_type": "联系客服",
+              "behavior_time": "2025-09-26 21:46",
+              "behavior_detail": "客户在APP内承诺3日内还款",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0036",
+              "behavior_type": "查看账单",
+              "behavior_time": "2025-06-13 17:40",
+              "behavior_detail": "客户联系客服申请延期",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0007",
+              "behavior_type": "申请延期",
+              "behavior_time": "2025-05-23 22:56",
+              "behavior_detail": "客户修改了联系方式",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0001",
+              "behavior_type": "申请延期",
+              "behavior_time": "2025-05-20 16:10",
+              "behavior_detail": "客户联系客服申请延期",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0031",
+              "behavior_type": "查看账单",
+              "behavior_time": "2025-03-25 15:49",
+              "behavior_detail": "客户主动登录APP查看账单",
+              "source": "原始导入"
+            }
+          ],
+          "emotions": [
+            {
+              "emotion_id": "E0021",
+              "emotion_type": "抵触",
+              "emotion_intensity": 0.62,
+              "record_time": "2025-06-25 12:28",
+              "source": "原始导入"
+            },
+            {
+              "emotion_id": "E0012",
+              "emotion_type": "配合",
+              "emotion_intensity": 0.32,
+              "record_time": "2025-04-05 09:59",
+              "source": "原始导入"
+            }
+          ],
+          "repayments": [
+            {
+              "repay_id": "RP0007",
+              "repay_amount": 3000.0,
+              "repay_time": "2024-12-17",
+              "is_on_time": "是"
+            },
+            {
+              "repay_id": "RP0015",
+              "repay_amount": 1000.0,
+              "repay_time": "2024-03-18",
+              "is_on_time": "否"
+            },
+            {
+              "repay_id": "RP0028",
+              "repay_amount": 1500.0,
+              "repay_time": "2024-03-16",
+              "is_on_time": "是"
+            },
+            {
+              "repay_id": "RP0020",
+              "repay_amount": 1500.0,
+              "repay_time": "2024-03-12",
+              "is_on_time": "否"
+            }
+          ],
+          "memory": {}
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_overdues",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C0019"
+        },
+        "output": {
+          "customer_id": "C0019",
+          "items": [
+            {
+              "overdue_id": "O0028",
+              "loan_id": "L0016",
+              "loan_type": "教育贷",
+              "overdue_amount": 2000.0,
+              "overdue_days": 180,
+              "overdue_periods": 1,
+              "last_repay_date": "2025-08-09",
+              "recommended_template_id": "T002",
+              "owner_conflict": false
+            },
+            {
+              "overdue_id": "O0039",
+              "loan_id": "L0005",
+              "loan_type": "装修贷",
+              "overdue_amount": 2000.0,
+              "overdue_days": 60,
+              "overdue_periods": 6,
+              "last_repay_date": "2025-09-15",
+              "recommended_template_id": "T001",
+              "owner_conflict": true
+            },
+            {
+              "overdue_id": "O0015",
+              "loan_id": "L0011",
+              "loan_type": "车贷",
+              "overdue_amount": 8000.0,
+              "overdue_days": 45,
+              "overdue_periods": 3,
+              "last_repay_date": "2025-08-07",
+              "recommended_template_id": "T002",
+              "owner_conflict": true
+            },
+            {
+              "overdue_id": "O0016",
+              "loan_id": "L0010",
+              "loan_type": "装修贷",
+              "overdue_amount": 3000.0,
+              "overdue_days": 45,
+              "overdue_periods": 6,
+              "last_repay_date": "2025-05-23",
+              "recommended_template_id": "T002",
+              "owner_conflict": true
+            },
+            {
+              "overdue_id": "O0004",
+              "loan_id": "L0012",
+              "loan_type": "消费贷",
+              "overdue_amount": 2000.0,
+              "overdue_days": 30,
+              "overdue_periods": 1,
+              "last_repay_date": "2025-09-13",
+              "recommended_template_id": "T005",
+              "owner_conflict": true
+            },
+            {
+              "overdue_id": "O0025",
+              "loan_id": "L0024",
+              "loan_type": "车贷",
+              "overdue_amount": 500.0,
+              "overdue_days": 15,
+              "overdue_periods": 1,
+              "last_repay_date": "2025-07-27",
+              "recommended_template_id": "T002",
+              "owner_conflict": true
+            }
+          ],
+          "total_amount": 17500.0,
+          "suggestion": "建议优先处理 O0028（教育贷，逾期180天，欠款2000元）",
+          "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
+          "conflicts": [
+            "O0039 关联的贷款 L0005 在贷款表中不属于该客户，需人工复核",
+            "O0015 关联的贷款 L0011 在贷款表中不属于该客户，需人工复核",
+            "O0016 关联的贷款 L0010 在贷款表中不属于该客户，需人工复核",
+            "O0004 关联的贷款 L0012 在贷款表中不属于该客户，需人工复核",
+            "O0025 关联的贷款 L0024 在贷款表中不属于该客户，需人工复核"
+          ]
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_contact_count_today",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C0019",
+          "day": "2026-10-24"
+        },
+        "output": {
+          "customer_id": "C0019",
+          "day": "2026-10-24",
+          "count": 0
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_willingness",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C0019"
+        },
+        "output": {
+          "customer_id": "C0019",
+          "score": 39,
+          "level": "低",
+          "factors": [
+            {
+              "name": "还款履约",
+              "score": 50.0,
+              "weight": 0.25,
+              "contribution": 12.5,
+              "evidence": [
+                "RP0020",
+                "RP0028",
+                "RP0015",
+                "RP0007"
+              ],
+              "note": "按时还款2/4次"
+            },
+            {
+              "name": "逾期严重度",
+              "score": 25.3,
+              "weight": 0.2,
+              "contribution": 5.07,
+              "evidence": [
+                "O0004",
+                "O0015",
+                "O0016",
+                "O0025",
+                "O0028",
+                "O0039"
+              ],
+              "note": "最长逾期180天，总欠款17500元，为月收入的2.12倍"
+            },
+            {
+              "name": "行为信号",
+              "score": 70.0,
+              "weight": 0.15,
+              "contribution": 10.5,
+              "evidence": [
+                "B0031",
+                "B0036",
+                "B0040",
+                "B0011"
+              ],
+              "note": "正向3条，负向1条"
+            },
+            {
+              "name": "历史催收结果",
+              "score": 20.0,
+              "weight": 0.15,
+              "contribution": 3.0,
+              "evidence": [
+                "CH0024",
+                "CH0049",
+                "CH0014",
+                "CH0021",
+                "CH0035",
+                "CH0037",
+                "CH0041"
+              ],
+              "note": "正向2条，负向5条"
+            },
+            {
+              "name": "情绪",
+              "score": 42.5,
+              "weight": 0.1,
+              "contribution": 4.25,
+              "evidence": [
+                "E0021",
+                "E0012"
+              ],
+              "note": "抵触(0.62)、配合(0.32)"
+            },
+            {
+              "name": "信用画像",
+              "score": 23.6,
+              "weight": 0.15,
+              "contribution": 3.54,
+              "evidence": [
+                "C0019"
+              ],
+              "note": "信用评分465，客户等级D"
+            }
+          ],
+          "adjustments": [],
+          "confidence": 0.85,
+          "needs_review": true,
+          "review_reasons": [
+            "存在5条数据冲突（如 O0004）"
+          ]
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "route",
+      "name": "切换模式",
+      "status": "ok",
+      "detail": {
+        "mode": "催收对话模式",
+        "pack": "consumer_finance",
+        "session_id": "S-a6b80b8c"
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "intent_emotion",
+      "status": "ok",
+      "detail": {
+        "owner": "collection:consumer_finance",
+        "kind": "skill",
+        "attempt": 1,
+        "input": {
+          "text": "我最近失业了真的很焦虑，能不能想办法帮我分期？",
+          "context": {
+            "summary": "",
+            "recent": []
+          }
+        },
+        "output": {
+          "customer_intent": "要求分期",
+          "emotion": "焦虑",
+          "emotion_intensity": 0.8,
+          "amount": null,
+          "periods": null,
+          "date": null,
+          "monthly_affordable": null,
+          "confidence": 0.9,
+          "conflict": false,
+          "method": "大模型"
+        }
+      },
+      "ms": 792
+    },
+    {
+      "step": "understand",
+      "name": "意图情绪识别",
+      "status": "ok",
+      "detail": {
+        "intent": "要求分期",
+        "emotion": "焦虑",
+        "intensity": 0.8,
+        "confidence": 0.9,
+        "method": "大模型"
+      },
+      "ms": 0
+    },
+    {
+      "step": "guard",
+      "name": "检查点三：客户输入",
+      "status": "ok",
+      "detail": {
+        "signals": []
+      },
+      "ms": 0
+    },
+    {
+      "step": "decide",
+      "name": "阶段与动作",
+      "status": "ok",
+      "detail": {
+        "stage": "协商",
+        "actions": [
+          "installment_plan"
+        ]
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "installment_plan",
+      "status": "ok",
+      "detail": {
+        "owner": "collection:consumer_finance",
+        "kind": "skill",
+        "attempt": 1,
+        "input": {
+          "monthly_affordable": null,
+          "requested_periods": null,
+          "lump_sum": false
+        },
+        "output": {
+          "customer_id": "C0019",
+          "principal": 17500.0,
+          "overdue_ids": [
+            "O0004",
+            "O0015",
+            "O0016",
+            "O0025",
+            "O0028",
+            "O0039"
+          ],
+          "max_overdue_days": 180,
+          "credit_score": 465,
+          "affordable_monthly": 2472.6,
+          "affordability_source": "按月收入的30%估算",
+          "eligible_templates": [
+            "T005",
+            "T006"
+          ],
+          "plans": [
+            {
+              "template_id": "T005",
+              "template_type": "延期分期",
+              "periods": 12,
+              "annual_rate": 0.108,
+              "fee_rate": 0.02,
+              "principal": 17500.0,
+              "monthly_payment": 1545.05,
+              "fee": 350.0,
+              "total_cost": 18890.56,
+              "lump_sum": false,
+              "affordable": true,
+              "note": ""
+            },
+            {
+              "template_id": "T006",
+              "template_type": "一次性结清减免",
+              "periods": 1,
+              "annual_rate": 0.0,
+              "fee_rate": 0.0,
+              "principal": 17500.0,
+              "monthly_payment": 17500.0,
+              "fee": 0.0,
+              "total_cost": 17500.0,
+              "lump_sum": true,
+              "affordable": false,
+              "note": "一次性结清可申请减免违约金，需审批，不承诺结果"
+            }
+          ],
+          "conflicts": [
+            "O0004 推荐模板 T005 与适用条件不符（逾期30天、信用评分465），已按适用条件重新匹配",
+            "O0015 推荐模板 T002 与适用条件不符（逾期45天、信用评分465），已按适用条件重新匹配",
+            "O0016 推荐模板 T002 与适用条件不符（逾期45天、信用评分465），已按适用条件重新匹配",
+            "O0025 推荐模板 T002 与适用条件不符（逾期15天、信用评分465），已按适用条件重新匹配",
+            "O0028 推荐模板 T002 与适用条件不符（逾期180天、信用评分465），已按适用条件重新匹配",
+            "O0039 推荐模板 T001 与适用条件不符（逾期60天、信用评分465），已按适用条件重新匹配"
+          ],
+          "message": "",
+          "method": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取"
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "willingness_update",
+      "status": "ok",
+      "detail": {
+        "owner": "collection:consumer_finance",
+        "kind": "skill",
+        "attempt": 1,
+        "input": {
+          "intents": [
+            "要求分期"
+          ]
+        },
+        "output": {
+          "customer_id": "C0019",
+          "score": 44,
+          "level": "中",
+          "factors": [
+            {
+              "name": "还款履约",
+              "score": 50.0,
+              "weight": 0.25,
+              "contribution": 12.5,
+              "evidence": [
+                "RP0020",
+                "RP0028",
+                "RP0015",
+                "RP0007"
+              ],
+              "note": "按时还款2/4次"
+            },
+            {
+              "name": "逾期严重度",
+              "score": 25.3,
+              "weight": 0.2,
+              "contribution": 5.07,
+              "evidence": [
+                "O0004",
+                "O0015",
+                "O0016",
+                "O0025",
+                "O0028",
+                "O0039"
+              ],
+              "note": "最长逾期180天，总欠款17500元，为月收入的2.12倍"
+            },
+            {
+              "name": "行为信号",
+              "score": 70.0,
+              "weight": 0.15,
+              "contribution": 10.5,
+              "evidence": [
+                "B0031",
+                "B0036",
+                "B0040",
+                "B0011"
+              ],
+              "note": "正向3条，负向1条"
+            },
+            {
+              "name": "历史催收结果",
+              "score": 20.0,
+              "weight": 0.15,
+              "contribution": 3.0,
+              "evidence": [
+                "CH0024",
+                "CH0049",
+                "CH0014",
+                "CH0021",
+                "CH0035",
+                "CH0037",
+                "CH0041"
+              ],
+              "note": "正向2条，负向5条"
+            },
+            {
+              "name": "情绪",
+              "score": 42.5,
+              "weight": 0.1,
+              "contribution": 4.25,
+              "evidence": [
+                "E0021",
+                "E0012"
+              ],
+              "note": "抵触(0.62)、配合(0.32)"
+            },
+            {
+              "name": "信用画像",
+              "score": 23.6,
+              "weight": 0.15,
+              "contribution": 3.54,
+              "evidence": [
+                "C0019"
+              ],
+              "note": "信用评分465，客户等级D"
+            }
+          ],
+          "adjustments": [
+            {
+              "intent": "要求分期",
+              "delta": 5
+            }
+          ],
+          "confidence": 0.85,
+          "needs_review": true,
+          "review_reasons": [
+            "存在5条数据冲突（如 O0004）"
+          ]
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "generate_reply",
+      "status": "ok",
+      "detail": {
+        "owner": "collection:consumer_finance",
+        "kind": "skill",
+        "attempt": 1,
+        "input": {
+          "payload": {
+            "system_intent": "情绪感知+分期方案协商",
+            "customer_intent": "要求分期",
+            "stage_goal": "提供合规的分期或还款方案并协商调整",
+            "客户说": "我最近失业了真的很焦虑，能不能想办法帮我分期？",
+            "客户情绪": "焦虑（0.80）",
+            "事实": {
+              "欠款总额": "17500元",
+              "逾期笔数": 6,
+              "最长逾期": "180天",
+              "分期方案": [
+                {
+                  "模板": "T005",
+                  "类型": "延期分期",
+                  "期数": 12,
+                  "月供": "1545.05元",
+                  "年化利率": "10.80%",
+                  "手续费": "350.00元",
+                  "总成本": "18890.56元",
+                  "说明": ""
+                },
+                {
+                  "模板": "T006",
+                  "类型": "一次性结清减免",
+                  "期数": 1,
+                  "月供": "17500.00元",
+                  "年化利率": "0.00%",
+                  "手续费": "0.00元",
+                  "总成本": "17500.00元",
+                  "说明": "一次性结清可申请减免违约金，需审批，不承诺结果"
+                }
+              ],
+              "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取",
+              "还款意愿等级": "中"
+            },
+            "对话摘要": "",
+            "最近对话": []
+          },
+          "rewrite_hint": ""
+        },
+        "output": {
+          "reply": "很抱歉让您感到焦虑，我理解失业带来的压力。您的情况可以协商分期，我先记录您的反馈。目前有一笔延期分期方案：12期，月供1545.05元，年化利率10.80%，手续费350.00元，总成本18890.56元；另有一次性结清方案，可申请减免违约金，需审批，不承诺结果。请问您每月可承受金额大概是多少？",
+          "source": "大模型"
+        }
+      },
+      "ms": 1576
+    },
+    {
+      "step": "guard",
+      "name": "检查点一：坐席话术",
+      "status": "ok",
+      "detail": {
+        "hits": [],
+        "degraded": false
+      },
+      "ms": 0
+    },
+    {
+      "step": "reply",
+      "name": "坐席回复",
+      "status": "ok",
+      "detail": {
+        "system_intent": "情绪感知+分期方案协商",
+        "handoff": false
+      },
+      "ms": 0
+    }
+  ]
 }

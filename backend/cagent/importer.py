@@ -77,6 +77,34 @@ def check_quality(conn: sqlite3.Connection) -> list[dict]:
     return issues
 
 
+def sync_raw(dest: sqlite3.Connection, source: sqlite3.Connection) -> dict:
+    """用源库的「原始导入」业务行覆盖目标库，不复制系统生成行和运行时表。"""
+    db.init_runtime(dest)
+    counts: dict[str, int] = {}
+    for table, cols in db.BUSINESS_TABLES.items():
+        db.create_business_table(dest, table)
+        names = [c for c, _ in cols] + db.META_COLUMNS
+        listed = ", ".join(db.q(n) for n in names)
+        rows = source.execute(
+            f"SELECT {listed} FROM {db.q(table)} WHERE source = ?", (db.RAW,)
+        ).fetchall()
+        dest.executemany(
+            f"INSERT INTO {db.q(table)} ({listed}) VALUES ({', '.join('?' * len(names))})",
+            [tuple(r) for r in rows],
+        )
+        counts[table] = len(rows)
+    issues = check_quality(dest)
+    dest.execute("DELETE FROM data_quality")
+    dest.executemany(
+        "INSERT INTO data_quality(table_name, record_id, customer_id, issue) VALUES (?,?,?,?)",
+        [(i["table"], i["record_id"], i["customer_id"], i["issue"]) for i in issues],
+    )
+    for table in db.RUNTIME_TABLES:
+        dest.execute(f"DELETE FROM {db.q(table)}")
+    dest.commit()
+    return {"counts": counts, "issues": len(issues)}
+
+
 def reset_generated(conn: sqlite3.Connection) -> None:
     for table in db.BUSINESS_TABLES:
         conn.execute(f"DELETE FROM {db.q(table)} WHERE source = ?", (db.GENERATED,))

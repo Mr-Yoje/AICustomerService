@@ -89,12 +89,12 @@ python -m pytest -q
 
 在 `backend` 目录执行。时钟用运行当时的系统时间，不要再传 `--now`。题目原文里写了时刻的（例如「晚上11点」）仍以题面为准。
 
-测评使用单独的库 `backend/runtime/eval.db`，避免 `--reset` 清掉界面正在用的 `collection.db`。公开答案只在对比时读取，不进入系统。
+测评使用单独的库 `backend/runtime/eval.db`。每次运行都会用 `collection.db` 里「原始导入」的业务数据覆盖它，并清空 `eval.db` 自己上次留下的会话和报告。界面上的会话、报告，以及业务表里「系统生成」的记录不会复制过去，`collection.db` 本身也不会被修改。公开答案只在对比时读取，不进入系统。
 
 ```powershell
 cd backend
 $env:CAGENT_DB_PATH = "$PWD\runtime\eval.db"
-python scripts/run_eval.py --reset
+python scripts/run_eval.py
 python scripts/compare_eval.py
 Remove-Item Env:CAGENT_DB_PATH
 ```

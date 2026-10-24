@@ -62,21 +62,32 @@ def run(conn, *, db_path, input_path: Path, output_dir: Path, now: datetime, off
     return rows
 
 
+def prepare(conn, source_path: Path) -> dict:
+    """每次测评前，用 collection.db 的原始导入数据覆盖当前测评库。"""
+    source_path = Path(source_path)
+    if not source_path.is_file():
+        raise FileNotFoundError(f"找不到原始数据库: {source_path}")
+    current = conn.execute("PRAGMA database_list").fetchone()["file"]
+    if current and Path(current).resolve() == source_path.resolve():
+        raise RuntimeError("测评库与 collection.db 是同一个文件，已停止，避免改动界面数据")
+    source = db.connect(source_path)
+    try:
+        return importer.sync_raw(conn, source)
+    finally:
+        source.close()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="批量运行测评题并输出结果、处理轨迹、审计日志与报告样例")
     ap.add_argument("--input", type=Path, default=settings.DATA_DIR / "question_public.csv")
     ap.add_argument("--output", type=Path, default=settings.OUTPUT_DIR / "eval")
     ap.add_argument("--now", help="当前时间，格式 2026-10-24T10:00；默认取系统时间")
-    ap.add_argument("--reset", action="store_true", help="重新导入原始数据并清空运行时数据")
+    ap.add_argument("--reset", action="store_true", help="兼容旧命令；每次运行都会从 collection.db 同步原始数据")
     ap.add_argument("--offline", action="store_true", help="不调用大模型，全部走兜底逻辑")
     args = ap.parse_args()
     conn = db.connect(settings.DB_PATH)
-    has_data = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='dim_customer'").fetchone()
-    if args.reset or not has_data:
-        importer.import_all(conn, settings.DATA_DIR)
-        for table in db.RUNTIME_TABLES:
-            conn.execute(f"DELETE FROM {db.q(table)}")
-        conn.commit()
+    synced = prepare(conn, settings.COLLECTION_DB_PATH)
+    print(f"已从 {settings.COLLECTION_DB_PATH} 同步原始数据：客户 {synced['counts'].get('dim_customer', 0)} 位")
     now = datetime.fromisoformat(args.now) if args.now else datetime.now()
     rows = run(conn, db_path=settings.DB_PATH, input_path=args.input, output_dir=args.output, now=now,
                offline=args.offline)

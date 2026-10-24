@@ -42,7 +42,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-40276ec204",
+  "trace_id": "TR-f303ad1998",
   "trace": [
     {
       "step": "understand",
@@ -60,7 +60,7 @@
       "detail": {
         "speaker": "operator",
         "method": "大模型",
-        "confidence": 0.9
+        "confidence": 0.95
       },
       "ms": 0
     },

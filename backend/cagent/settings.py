@@ -23,5 +23,6 @@ load_env(Path(os.getenv("CAGENT_ENV_FILE", REPO_DIR / ".env")))
 
 DATA_DIR = Path(os.getenv("CAGENT_DATA_DIR", REPO_DIR / "赛题" / "赛题08_金融催收对话引擎" / "data"))
 CONFIG_DIR = Path(os.getenv("CAGENT_CONFIG_DIR", BACKEND_DIR / "config"))
-DB_PATH = Path(os.getenv("CAGENT_DB_PATH", BACKEND_DIR / "runtime" / "collection.db"))
+COLLECTION_DB_PATH = BACKEND_DIR / "runtime" / "collection.db"
+DB_PATH = Path(os.getenv("CAGENT_DB_PATH", COLLECTION_DB_PATH))
 OUTPUT_DIR = Path(os.getenv("CAGENT_OUTPUT_DIR", BACKEND_DIR / "output"))
