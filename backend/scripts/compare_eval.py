@@ -47,9 +47,9 @@ def to_markdown(rows: list[dict], stats: dict) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="对比测评输出与公开测试集答案（仅事后对比，答案不进入系统）")
-    ap.add_argument("--result", type=Path, default=settings.OUTPUT_DIR / "eval" / "results.csv")
+    ap.add_argument("--result", type=Path, default=settings.OUTPUT_DIR / "eval_public" / "results.csv")
     ap.add_argument("--answer", type=Path, default=settings.DATA_DIR / "公开测试集答案.csv")
-    ap.add_argument("--output", type=Path, default=settings.OUTPUT_DIR / "eval" / "compare.md")
+    ap.add_argument("--output", type=Path, default=settings.OUTPUT_DIR / "eval_public" / "compare.md")
     args = ap.parse_args()
     md = to_markdown(*compare(args.result, args.answer))
     args.output.parent.mkdir(parents=True, exist_ok=True)

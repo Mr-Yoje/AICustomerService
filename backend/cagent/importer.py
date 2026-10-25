@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import sqlite3
+from datetime import date, datetime
 from pathlib import Path
 
 from . import db
@@ -103,6 +104,97 @@ def sync_raw(dest: sqlite3.Connection, source: sqlite3.Connection) -> dict:
         dest.execute(f"DELETE FROM {db.q(table)}")
     dest.commit()
     return {"counts": counts, "issues": len(issues)}
+
+
+_PRIVATE_FK = {
+    "dim_loan": {"customer_id": "dim_customer"},
+    "fact_overdue": {"customer_id": "dim_customer", "loan_id": "dim_loan"},
+    "fact_call_history": {"customer_id": "dim_customer"},
+    "fact_repayment": {"customer_id": "dim_customer"},
+    "fact_user_behavior": {"customer_id": "dim_customer"},
+    "fact_emotion_log": {"customer_id": "dim_customer"},
+}
+
+
+def _cell(value, typ: str):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.hour == value.minute == value.second == value.microsecond == 0:
+            return value.date().isoformat()
+        return value.isoformat(sep=" ", timespec="seconds")
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, str):
+        value = value.strip()
+        if value == "":
+            return None
+    if typ == "INTEGER":
+        return int(float(value))
+    if typ == "REAL":
+        return float(value)
+    return str(value).strip()
+
+
+def append_private(conn: sqlite3.Connection, workbook: Path) -> dict:
+    """把非公开业务表追加进当前库。客户编号保持原值；主键冲突的本批记录改为 P- 前缀，并改写本批外键。"""
+    import openpyxl
+
+    wb = openpyxl.load_workbook(workbook, read_only=True, data_only=True)
+    renames: dict[str, dict[str, str]] = {}
+    counts: dict[str, int] = {}
+    stamp = db.now_iso()
+    try:
+        for table, cols in db.BUSINESS_TABLES.items():
+            if table not in wb.sheetnames:
+                continue
+            rows = wb[table].iter_rows(values_only=True)
+            header = ["" if cell is None else str(cell) for cell in next(rows)]
+            missing = [name for name, _ in cols if name not in header]
+            if missing:
+                raise ValueError(f"{table} 缺少列: {missing}")
+            index = {name: header.index(name) for name, _ in cols}
+            pk = cols[0][0]
+            existing = {row[0] for row in conn.execute(f"SELECT {db.q(pk)} FROM {db.q(table)}")}
+            renamed: dict[str, str] = {}
+            records = []
+            for raw in rows:
+                if raw[index[pk]] is None:
+                    continue
+                values = {name: _cell(raw[index[name]], typ) for name, typ in cols}
+                original = values[pk]
+                if original in existing:
+                    prefixed = f"P-{original}"
+                    if prefixed in existing:
+                        raise ValueError(f"{table}.{pk}={prefixed} 仍然冲突")
+                    renamed[original] = prefixed
+                    values[pk] = prefixed
+                    existing.add(prefixed)
+                else:
+                    existing.add(original)
+                for column, ref in _PRIVATE_FK.get(table, {}).items():
+                    current = values[column]
+                    if current in renames.get(ref, {}):
+                        values[column] = renames[ref][current]
+                records.append(tuple(values[name] for name, _ in cols) + (db.RAW, None, stamp))
+            names = [name for name, _ in cols] + db.META_COLUMNS
+            conn.executemany(
+                f"INSERT INTO {db.q(table)} ({', '.join(db.q(n) for n in names)}) "
+                f"VALUES ({', '.join('?' * len(names))})",
+                records,
+            )
+            renames[table] = renamed
+            counts[table] = len(records)
+    finally:
+        wb.close()
+    issues = check_quality(conn)
+    conn.execute("DELETE FROM data_quality")
+    conn.executemany(
+        "INSERT INTO data_quality(table_name, record_id, customer_id, issue) VALUES (?,?,?,?)",
+        [(i["table"], i["record_id"], i["customer_id"], i["issue"]) for i in issues],
+    )
+    conn.commit()
+    return {"counts": counts, "prefixed": {table: len(ids) for table, ids in renames.items()}, "issues": len(issues)}
 
 
 def reset_generated(conn: sqlite3.Connection) -> None:

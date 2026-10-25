@@ -52,7 +52,7 @@ python scripts/init_db.py --reset
 .\start.ps1
 ```
 
-浏览器打开 http://127.0.0.1:8000 。接口文档在 http://127.0.0.1:8000/docs 。
+浏览器打开 http://127.0.0.1:8000 。同一 WiFi 下的手机或电脑用启动时打印的局域网地址，例如 http://192.168.1.125:8000 。接口文档在相同地址的 `/docs`。当前 WiFi 若被 Windows 标成公用网络，需允许入站 TCP 8000，否则只有本机能打开。
 
 ```powershell
 .\start.ps1 -Offline        # 不调用大模型
@@ -85,21 +85,29 @@ python scripts/serve.py --port 8000 --web-dist D:\path\to\AICustomerService-web\
 python -m pytest -q
 ```
 
-## 跑公开测评
+## 跑测评
 
-在 `backend` 目录执行。时钟用运行当时的系统时间，不要再传 `--now`。题目原文里写了时刻的（例如「晚上11点」）仍以题面为准。
+公开测试题和非公开测试题分开跑，结果各一份。在 `backend` 目录执行。时钟用运行当时的系统时间，不要再传 `--now`。题目原文里写了时刻的（例如「晚上11点」「现在是22:30」）仍以题面为准。
 
-测评使用单独的库 `backend/runtime/eval.db`。每次运行都会用 `collection.db` 里「原始导入」的业务数据覆盖它，并清空 `eval.db` 自己上次留下的会话和报告。界面上的会话、报告，以及业务表里「系统生成」的记录不会复制过去，`collection.db` 本身也不会被修改。公开答案只在对比时读取，不进入系统。
+公开题使用 `backend/runtime/eval_public.db`，非公开题使用 `backend/runtime/eval_private.db`。每次运行都从公开 CSV 重建对应测评库，并清空该库上次留下的会话和报告，不从 `collection.db` 复制，也不修改它。非公开测评库还会追加 `非公开加试/03_非公开题所需业务数据_现场提供.xlsx`：客户编号保持原号，主键冲突的记录改为 `P-` 前缀。公开答案只在对比时读取，不进入系统。
 
 ```powershell
 cd backend
-$env:CAGENT_DB_PATH = "$PWD\runtime\eval.db"
-python scripts/run_eval.py
+python scripts/run_eval.py --suite both
 python scripts/compare_eval.py
-Remove-Item Env:CAGENT_DB_PATH
 ```
 
-结果在 `backend/output/eval/`：
+只跑其中一套时把 `--suite both` 换成 `--suite public` 或 `--suite private`。
+
+仓库里保留的评测结果是下面两个目录，不再提交 `backend/output/eval/`。
+
+| 测评 | 启动 | 结果 |
+| --- | --- | --- |
+| 公开测试题 | `python scripts/run_eval.py --suite public` | `backend/output/eval_public/` |
+| 非公开测试题 | `python scripts/run_eval.py --suite private` | `backend/output/eval_private/` |
+| 两套一起 | `python scripts/run_eval.py --suite both` | 上面两个目录各一份 |
+
+`compare.md` 只由 `python scripts/compare_eval.py` 写到公开结果目录。两个目录里其余文件相同：
 
 | 文件 | 内容 |
 | --- | --- |
@@ -109,7 +117,7 @@ Remove-Item Env:CAGENT_DB_PATH
 | `audit_log.csv` | 审计日志 |
 | `reports/` | 催收报告样例 |
 
-红线样例用临时库，不改 `collection.db` 和 `eval.db`。在 `backend` 目录执行，结束码 0 表示没有漏检：
+红线样例用临时库，不改 `collection.db` 和两套测评库。在 `backend` 目录执行，结束码 0 表示没有漏检：
 
 ```powershell
 python scripts/redline_eval.py

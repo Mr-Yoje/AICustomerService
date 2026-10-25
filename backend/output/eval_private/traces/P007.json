@@ -1,0 +1,104 @@
+{
+  "session_id": "S-1ddf6666",
+  "mode": "运营模式",
+  "speaker": "operator",
+  "speaker_method": "大模型",
+  "system_intent": "提醒催收",
+  "reply": "外呼已拦截：命中 R004（违规时段）禁止在22:00-次日8:00进行外呼，处置：阻断外呼并提示下次可外呼时间。下次可外呼时间：2026-10-26 08:00，已生成待办",
+  "usage": null,
+  "customer_id": "C**17",
+  "hit_rules": [
+    "R004"
+  ],
+  "compliance": [
+    {
+      "checkpoint": "operator_action",
+      "passed": false,
+      "hits": [
+        {
+          "rule_id": "R004",
+          "rule_type": "违规时段",
+          "rule_content": "禁止在22:00-次日8:00进行外呼",
+          "level": "严重",
+          "action": "阻断外呼并提示下次可外呼时间",
+          "method": "时段",
+          "evidence": "22:00-次日08:00",
+          "confidence": 0.8
+        }
+      ],
+      "block": true,
+      "handoff": false,
+      "degraded": false,
+      "signals": [],
+      "next_allowed": "2026-10-26T08:00",
+      "notes": []
+    }
+  ],
+  "willingness_score": null,
+  "willingness_level": null,
+  "strategy": null,
+  "handoff": false,
+  "handoff_package_id": null,
+  "end_reason": null,
+  "needs_review": false,
+  "review_reasons": [],
+  "key_points": [],
+  "trace_id": "TR-f300a12806",
+  "trace": [
+    {
+      "step": "understand",
+      "name": "题面时间",
+      "status": "ok",
+      "detail": {
+        "time": "2026-10-25T22:30"
+      },
+      "ms": 0
+    },
+    {
+      "step": "route",
+      "name": "说话人判定",
+      "status": "ok",
+      "detail": {
+        "speaker": "operator",
+        "method": "大模型",
+        "confidence": 0.95
+      },
+      "ms": 0
+    },
+    {
+      "step": "understand",
+      "name": "运营意图",
+      "status": "ok",
+      "detail": {
+        "intent": "发起催收",
+        "customer_id": "C**17",
+        "method": "大模型",
+        "confidence": 0.85
+      },
+      "ms": 0
+    },
+    {
+      "step": "decide",
+      "name": "匹配业务包",
+      "status": "ok",
+      "detail": {
+        "loan_type": "现金贷",
+        "pack": "consumer_finance",
+        "version": "eb2f7cba12"
+      },
+      "ms": 0
+    },
+    {
+      "step": "guard",
+      "name": "检查点二：外呼门禁",
+      "status": "warn",
+      "detail": {
+        "hits": [
+          "R004"
+        ],
+        "next_allowed": "2026-10-26T08:00"
+      },
+      "ms": 0
+    }
+  ]
+}

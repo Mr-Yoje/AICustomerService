@@ -1,0 +1,92 @@
+{
+  "session_id": null,
+  "mode": "运营模式",
+  "speaker": "agent",
+  "speaker_method": "大模型",
+  "system_intent": "合规检测",
+  "reply": "[合规拦截] 命中 R001（辱骂，严重）：话术中不得含有辱骂性词汇；证据「老赖」；处置：人工接管\n建议改写：您好，您的借款已逾期，请尽快安排还款，以免影响个人征信。",
+  "usage": null,
+  "customer_id": "C**13",
+  "hit_rules": [
+    "R001"
+  ],
+  "compliance": [
+    {
+      "checkpoint": "agent_speech",
+      "passed": false,
+      "hits": [
+        {
+          "rule_id": "R001",
+          "rule_type": "辱骂",
+          "rule_content": "话术中不得含有辱骂性词汇",
+          "level": "严重",
+          "action": "人工接管",
+          "method": "关键词",
+          "evidence": "老赖",
+          "confidence": 0.8
+        }
+      ],
+      "block": true,
+      "handoff": true,
+      "degraded": false,
+      "signals": [],
+      "next_allowed": null,
+      "notes": []
+    }
+  ],
+  "willingness_score": null,
+  "willingness_level": null,
+  "strategy": null,
+  "handoff": true,
+  "handoff_package_id": null,
+  "end_reason": null,
+  "needs_review": false,
+  "review_reasons": [],
+  "key_points": [],
+  "trace_id": "TR-4211a125f8",
+  "trace": [
+    {
+      "step": "route",
+      "name": "说话人判定",
+      "status": "ok",
+      "detail": {
+        "speaker": "agent",
+        "method": "大模型",
+        "confidence": 0.95
+      },
+      "ms": 0
+    },
+    {
+      "step": "decide",
+      "name": "匹配业务包",
+      "status": "ok",
+      "detail": {
+        "loan_type": "教育贷",
+        "pack": "consumer_finance",
+        "version": "eb2f7cba12"
+      },
+      "ms": 0
+    },
+    {
+      "step": "guard",
+      "name": "检查点一：坐席话术审核",
+      "status": "warn",
+      "detail": {
+        "hits": [
+          "R001"
+        ],
+        "degraded": false
+      },
+      "ms": 0
+    },
+    {
+      "step": "reply",
+      "name": "改写建议",
+      "status": "ok",
+      "detail": {
+        "source": "大模型"
+      },
+      "ms": 0
+    }
+  ]
+}

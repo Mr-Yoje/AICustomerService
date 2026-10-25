@@ -1,0 +1,92 @@
+{
+  "session_id": null,
+  "mode": "运营模式",
+  "speaker": "agent",
+  "speaker_method": "大模型",
+  "system_intent": "合规检测",
+  "reply": "[合规拦截] 命中 R003（虚假承诺，严重）：不得承诺未授权的减免或延期；证据「剩下的我帮你全部免掉，罚息利息都不用管，我跟领导已经说好了」；处置：话术拦截\n建议改写：请尽快处理还款事宜，具体减免以官方审批结果为准，建议您通过正规渠道核实并按时还款，以免影响个人征信。",
+  "usage": null,
+  "customer_id": "C**27",
+  "hit_rules": [
+    "R003"
+  ],
+  "compliance": [
+    {
+      "checkpoint": "agent_speech",
+      "passed": false,
+      "hits": [
+        {
+          "rule_id": "R003",
+          "rule_type": "虚假承诺",
+          "rule_content": "不得承诺未授权的减免或延期",
+          "level": "严重",
+          "action": "话术拦截",
+          "method": "语义",
+          "evidence": "剩下的我帮你全部免掉，罚息利息都不用管，我跟领导已经说好了",
+          "confidence": 0.95
+        }
+      ],
+      "block": true,
+      "handoff": true,
+      "degraded": false,
+      "signals": [],
+      "next_allowed": null,
+      "notes": []
+    }
+  ],
+  "willingness_score": null,
+  "willingness_level": null,
+  "strategy": null,
+  "handoff": true,
+  "handoff_package_id": null,
+  "end_reason": null,
+  "needs_review": false,
+  "review_reasons": [],
+  "key_points": [],
+  "trace_id": "TR-a05b94def6",
+  "trace": [
+    {
+      "step": "route",
+      "name": "说话人判定",
+      "status": "ok",
+      "detail": {
+        "speaker": "agent",
+        "method": "大模型",
+        "confidence": 0.95
+      },
+      "ms": 0
+    },
+    {
+      "step": "decide",
+      "name": "匹配业务包",
+      "status": "ok",
+      "detail": {
+        "loan_type": "信用卡分期",
+        "pack": "consumer_finance",
+        "version": "eb2f7cba12"
+      },
+      "ms": 0
+    },
+    {
+      "step": "guard",
+      "name": "检查点一：坐席话术审核",
+      "status": "warn",
+      "detail": {
+        "hits": [
+          "R003"
+        ],
+        "degraded": false
+      },
+      "ms": 0
+    },
+    {
+      "step": "reply",
+      "name": "改写建议",
+      "status": "ok",
+      "detail": {
+        "source": "大模型"
+      },
+      "ms": 0
+    }
+  ]
+}

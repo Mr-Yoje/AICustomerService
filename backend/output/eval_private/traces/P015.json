@@ -1,0 +1,502 @@
+{
+  "session_id": "S-ccef64f8",
+  "mode": "人工接管",
+  "speaker": "customer",
+  "speaker_method": "大模型",
+  "system_intent": "人工接管",
+  "reply": "非常抱歉给您带来困扰。\n好的，这就为您转接人工坐席。您刚才说明的情况和账户信息已同步给坐席同事，不需要再重复，请稍候，预计30秒内接通。",
+  "usage": null,
+  "customer_id": "C**22",
+  "hit_rules": [],
+  "compliance": [
+    {
+      "checkpoint": "agent_speech",
+      "passed": true,
+      "hits": [],
+      "block": false,
+      "handoff": false,
+      "degraded": false,
+      "signals": [],
+      "next_allowed": null,
+      "notes": []
+    }
+  ],
+  "willingness_score": 60,
+  "willingness_level": "中",
+  "strategy": "协商分期",
+  "handoff": true,
+  "handoff_package_id": "ART-d6a867fc",
+  "end_reason": null,
+  "needs_review": false,
+  "review_reasons": [],
+  "key_points": [
+    "客户意图：投诉",
+    "情绪：愤怒（强度0.90）",
+    "识别置信度：0.95",
+    "还款意愿：60分（中，置信度1.0）",
+    "建议策略：协商分期",
+    "转人工：客户情绪愤怒（强度0.90）超过阈值"
+  ],
+  "trace_id": "TR-49a7d9d16e",
+  "trace": [
+    {
+      "step": "route",
+      "name": "说话人判定",
+      "status": "ok",
+      "detail": {
+        "speaker": "customer",
+        "method": "大模型",
+        "confidence": 0.98
+      },
+      "ms": 0
+    },
+    {
+      "step": "decide",
+      "name": "匹配业务包",
+      "status": "ok",
+      "detail": {
+        "loan_type": "消费贷",
+        "pack": "consumer_finance",
+        "version": "eb2f7cba12"
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_customer_profile",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C**22"
+        },
+        "output": {
+          "customer_id": "C**22",
+          "profile": {
+            "customer_id": "C**22",
+            "customer_name": "**",
+            "age": "**",
+            "occupation": "**",
+            "monthly_income": "**",
+            "credit_score": "**",
+            "region": "华东",
+            "customer_level": "B"
+          },
+          "behaviors": [
+            {
+              "behavior_id": "B0046",
+              "behavior_type": "联系客服",
+              "behavior_time": "2025-09-19 09:35",
+              "behavior_detail": "客户再次致电客服要求书面说明",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0045",
+              "behavior_type": "联系客服",
+              "behavior_time": "2025-09-18 21:05",
+              "behavior_detail": "客户联系客服投诉外呼频次过高",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0048",
+              "behavior_type": "查看账单",
+              "behavior_time": "2025-09-10 10:20",
+              "behavior_detail": "客户在APP内查看分期方案",
+              "source": "原始导入"
+            },
+            {
+              "behavior_id": "B0047",
+              "behavior_type": "申请延期",
+              "behavior_time": "2025-07-05 16:02",
+              "behavior_detail": "客户联系客服申请延期",
+              "source": "原始导入"
+            }
+          ],
+          "emotions": [
+            {
+              "emotion_id": "E0046",
+              "emotion_type": "愤怒",
+              "emotion_intensity": 0.86,
+              "record_time": "2025-09-18 20:41",
+              "source": "原始导入"
+            },
+            {
+              "emotion_id": "E0045",
+              "emotion_type": "愤怒",
+              "emotion_intensity": 0.94,
+              "record_time": "2025-09-18 17:20",
+              "source": "原始导入"
+            },
+            {
+              "emotion_id": "E0047",
+              "emotion_type": "抵触",
+              "emotion_intensity": 0.72,
+              "record_time": "2025-09-18 13:52",
+              "source": "原始导入"
+            },
+            {
+              "emotion_id": "E0048",
+              "emotion_type": "焦虑",
+              "emotion_intensity": 0.55,
+              "record_time": "2025-07-05 15:31",
+              "source": "原始导入"
+            }
+          ],
+          "repayments": [
+            {
+              "repay_id": "RP0048",
+              "repay_amount": 1000.0,
+              "repay_time": "2024-12-11",
+              "is_on_time": "是"
+            },
+            {
+              "repay_id": "RP0047",
+              "repay_amount": 1500.0,
+              "repay_time": "2024-09-25",
+              "is_on_time": "是"
+            },
+            {
+              "repay_id": "RP0046",
+              "repay_amount": 2000.0,
+              "repay_time": "2024-06-19",
+              "is_on_time": "是"
+            },
+            {
+              "repay_id": "RP0045",
+              "repay_amount": 3000.0,
+              "repay_time": "2024-03-06",
+              "is_on_time": "否"
+            }
+          ],
+          "memory": {}
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_overdues",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C**22"
+        },
+        "output": {
+          "customer_id": "C**22",
+          "items": [
+            {
+              "overdue_id": "O0047",
+              "loan_id": "L0034",
+              "loan_type": "消费贷",
+              "overdue_amount": 4200.0,
+              "overdue_days": 62,
+              "overdue_periods": 2,
+              "last_repay_date": "2025-08-19",
+              "recommended_template_id": "T003",
+              "owner_conflict": false
+            },
+            {
+              "overdue_id": "O0045",
+              "loan_id": "L0033",
+              "loan_type": "信用卡分期",
+              "overdue_amount": 6000.0,
+              "overdue_days": 38,
+              "overdue_periods": 2,
+              "last_repay_date": "2025-09-12",
+              "recommended_template_id": "T002",
+              "owner_conflict": false
+            },
+            {
+              "overdue_id": "O0048",
+              "loan_id": "L0034",
+              "loan_type": "消费贷",
+              "overdue_amount": 900.0,
+              "overdue_days": 15,
+              "overdue_periods": 1,
+              "last_repay_date": "2025-08-19",
+              "recommended_template_id": "T001",
+              "owner_conflict": false
+            },
+            {
+              "overdue_id": "O0046",
+              "loan_id": "L0033",
+              "loan_type": "信用卡分期",
+              "overdue_amount": 1800.0,
+              "overdue_days": 10,
+              "overdue_periods": 1,
+              "last_repay_date": "2025-09-12",
+              "recommended_template_id": "T001",
+              "owner_conflict": false
+            }
+          ],
+          "total_amount": 12900.0,
+          "suggestion": "建议优先处理 O0047（消费贷，逾期62天，欠款**元）",
+          "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
+          "conflicts": []
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_contact_count_today",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C**22",
+          "day": "2026-10-25"
+        },
+        "output": {
+          "customer_id": "C**22",
+          "day": "2026-10-25",
+          "count": 0
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "get_willingness",
+      "status": "ok",
+      "detail": {
+        "owner": "ops",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {
+          "customer_id": "C**22"
+        },
+        "output": {
+          "customer_id": "C**22",
+          "score": 60,
+          "level": "中",
+          "factors": [
+            {
+              "name": "还款履约",
+              "score": 75.0,
+              "weight": 0.25,
+              "contribution": 18.75,
+              "evidence": [
+                "RP0045",
+                "RP0046",
+                "RP0047",
+                "RP0048"
+              ],
+              "note": "按时还款3/4次"
+            },
+            {
+              "name": "逾期严重度",
+              "score": 67.4,
+              "weight": 0.2,
+              "contribution": 13.49,
+              "evidence": [
+                "O0045",
+                "O0046",
+                "O0047",
+                "O0048"
+              ],
+              "note": "最长逾期62天，总欠款**元，为月收入的0.96倍"
+            },
+            {
+              "name": "行为信号",
+              "score": 80.0,
+              "weight": 0.15,
+              "contribution": 12.0,
+              "evidence": [
+                "B0045",
+                "B0046",
+                "B0048"
+              ],
+              "note": "正向3条，负向0条"
+            },
+            {
+              "name": "历史催收结果",
+              "score": 20.0,
+              "weight": 0.15,
+              "contribution": 3.0,
+              "evidence": [
+                "CH0056",
+                "CH0057",
+                "CH0058",
+                "CH0059",
+                "CH0060"
+              ],
+              "note": "正向1条，负向4条"
+            },
+            {
+              "name": "情绪",
+              "score": 18.5,
+              "weight": 0.1,
+              "contribution": 1.85,
+              "evidence": [
+                "E0046",
+                "E0045",
+                "E0047",
+                "E0048"
+              ],
+              "note": "愤怒(0.86)、愤怒(0.94)、抵触(0.72)、焦虑(0.55)"
+            },
+            {
+              "name": "信用画像",
+              "score": 70.1,
+              "weight": 0.15,
+              "contribution": 10.51,
+              "evidence": [
+                "C**22"
+              ],
+              "note": "信用评分**，客户等级B"
+            }
+          ],
+          "adjustments": [],
+          "confidence": 1.0,
+          "needs_review": false,
+          "review_reasons": []
+        }
+      },
+      "ms": 0
+    },
+    {
+      "step": "route",
+      "name": "切换模式",
+      "status": "ok",
+      "detail": {
+        "mode": "催收对话模式",
+        "pack": "consumer_finance",
+        "session_id": "S-ccef64f8"
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "intent_emotion",
+      "status": "ok",
+      "detail": {
+        "owner": "collection:consumer_finance",
+        "kind": "skill",
+        "attempt": 1,
+        "input": {
+          "text": "我已经打12378投诉你们了，一天打我四次电话，你们就等着挨罚吧！",
+          "context": {
+            "summary": "",
+            "recent": []
+          }
+        },
+        "output": {
+          "customer_intent": "投诉",
+          "emotion": "愤怒",
+          "emotion_intensity": 0.9,
+          "amount": null,
+          "periods": null,
+          "date": null,
+          "monthly_affordable": null,
+          "confidence": 0.95,
+          "conflict": false,
+          "method": "大模型",
+          "current_node": null,
+          "next_node": null
+        }
+      },
+      "ms": 720
+    },
+    {
+      "step": "understand",
+      "name": "意图情绪识别",
+      "status": "ok",
+      "detail": {
+        "intent": "投诉",
+        "emotion": "愤怒",
+        "intensity": 0.9,
+        "confidence": 0.95,
+        "method": "大模型"
+      },
+      "ms": 0
+    },
+    {
+      "step": "guard",
+      "name": "检查点三：客户输入",
+      "status": "ok",
+      "detail": {
+        "signals": [
+          "投诉"
+        ]
+      },
+      "ms": 0
+    },
+    {
+      "step": "decide",
+      "name": "阶段与动作",
+      "status": "ok",
+      "detail": {
+        "stage": "告知逾期",
+        "actions": [
+          "reduce_contact"
+        ]
+      },
+      "ms": 0
+    },
+    {
+      "step": "call",
+      "name": "reduce_contact",
+      "status": "ok",
+      "detail": {
+        "owner": "collection:consumer_finance",
+        "kind": "tool",
+        "attempt": 1,
+        "input": {},
+        "output": {
+          "ok": true,
+          "detail": {
+            "contact_preference": "降低联系频次"
+          }
+        }
+      },
+      "ms": 3
+    },
+    {
+      "step": "call",
+      "name": "willingness_update",
+      "status": "ok",
+      "detail": {
+        "source": "前置工具"
+      },
+      "ms": 0
+    },
+    {
+      "step": "guard",
+      "name": "检查点一：坐席话术",
+      "status": "ok",
+      "detail": {
+        "hits": [],
+        "degraded": false
+      },
+      "ms": 0
+    },
+    {
+      "step": "reply",
+      "name": "坐席回复",
+      "status": "ok",
+      "detail": {
+        "system_intent": "人工接管",
+        "handoff": true
+      },
+      "ms": 0
+    },
+    {
+      "step": "route",
+      "name": "转人工",
+      "status": "ok",
+      "detail": {
+        "reason": "客户情绪愤怒（强度0.90）超过阈值",
+        "package": "ART-d6a867fc"
+      },
+      "ms": 0
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 
+from cagent import db, settings
 from scripts import compare_eval, redline_eval, run_eval
 
 NOW = datetime(2026, 10, 24, 10, 0)
@@ -45,6 +46,36 @@ def test_run_eval_offline(db_conn, db_path, tmp_path):
     for p in ("results.csv", "traces/T1.json", "audit_log.csv"):
         assert (out / p).exists()
     assert list((out / "reports").glob("*.md"))
+
+
+def test_prepare_suite_separates_public_and_private_data(tmp_path):
+    public, private = db.connect(tmp_path / "public.db"), db.connect(tmp_path / "private.db")
+    run_eval.prepare_suite(public, "public")
+    run_eval.prepare_suite(private, "private")
+    assert public.execute("SELECT COUNT(*) FROM dim_customer").fetchone()[0] == 10
+    assert public.execute("SELECT COUNT(*) FROM dim_customer WHERE customer_id='C0011'").fetchone()[0] == 0
+    assert private.execute("SELECT COUNT(*) FROM dim_customer WHERE customer_id='C0011'").fetchone()[0] == 1
+    assert public.execute("SELECT customer_id FROM dim_loan WHERE loan_id='L0001'").fetchone()[0] == (
+        private.execute("SELECT customer_id FROM dim_loan WHERE loan_id='L0001'").fetchone()[0]
+    )
+    public.close()
+    private.close()
+
+
+def test_public_questions_decode_gbk():
+    rows = run_eval.read_questions(settings.DATA_DIR / "question_public.csv")
+    assert [r["question_id"] for r in rows] == [f"Q{i:03d}" for i in range(1, 11)]
+    assert "催收" in rows[0]["scene_type"]
+
+
+def test_public_and_private_suites_write_separate_results():
+    public, private = run_eval.suite_layout("public"), run_eval.suite_layout("private")
+    assert public["db"] != private["db"]
+    assert public["output"] != private["output"]
+    assert public["output"].name == "eval_public"
+    assert private["output"].name == "eval_private"
+    assert public["input"].name == "question_public.csv"
+    assert "非公开" in private["input"].name
 
 
 def test_compare_eval(tmp_path):

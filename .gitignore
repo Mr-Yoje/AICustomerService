@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 backend/runtime/
 backend/output/*
-!backend/output/eval/
+!backend/output/eval_public/
+!backend/output/eval_private/
 node_modules/
 .env

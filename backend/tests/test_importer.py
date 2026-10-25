@@ -57,6 +57,29 @@ def _insert_raw_customer(conn, customer_id):
     )
 
 
+def test_append_private_prefixes_colliding_keys(tmp_path):
+    conn = db.connect(tmp_path / "eval.db")
+    importer.import_all(conn, settings.DATA_DIR)
+    public_owner = conn.execute("SELECT customer_id FROM dim_loan WHERE loan_id='L0001'").fetchone()[0]
+    workbook = settings.DATA_DIR / "非公开加试" / "03_非公开题所需业务数据_现场提供.xlsx"
+
+    added = importer.append_private(conn, workbook)
+
+    assert added["counts"]["dim_customer"] == 20
+    assert added["prefixed"]["dim_customer"] == 0
+    assert added["prefixed"]["dim_loan"] > 0
+    assert conn.execute("SELECT customer_id FROM dim_loan WHERE loan_id='L0001'").fetchone()[0] == public_owner
+    private_loan = conn.execute("SELECT customer_id FROM dim_loan WHERE loan_id='P-L0001'").fetchone()
+    assert private_loan is not None and private_loan[0] != public_owner
+    overdue = conn.execute(
+        "SELECT loan_id, customer_id FROM fact_overdue WHERE overdue_id='P-O0001'"
+    ).fetchone()
+    assert overdue["loan_id"] == "P-L0012" and overdue["customer_id"] == "C0017"
+    assert count(conn, "dim_customer", "customer_id='C0011'") == 1
+    assert count(conn, "data_quality", "customer_id >= 'C0011' AND issue LIKE '%不存在%'") == 0
+    conn.close()
+
+
 def test_sync_raw_copies_original_rows_and_leaves_runtime(tmp_path):
     source, dest = db.connect(tmp_path / "collection.db"), db.connect(tmp_path / "eval.db")
     importer.import_all(source, settings.DATA_DIR)
