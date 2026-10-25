@@ -42,6 +42,8 @@ class Understanding(BaseModel):
     confidence: float
     conflict: bool = False
     method: str
+    current_node: str | None = None
+    next_node: str | None = None
 
 
 class OperatorIntent(BaseModel):
@@ -134,9 +136,18 @@ class Understander:
             "客户提到每月能还多少、想分几期、金额、日期时，分别填 monthly_affordable、periods、amount、date，没有则填 null；"
             "尖括号占位符原样填写；\n"
             "conflict 表示同一句话里意图互相矛盾；confidence 为你对意图判断的把握（0 到 1）。\n"
+            "若上下文含 nodes，请根据客户这句话和已有对话判断 current_node 与 next_node："
+            "current_node 是对话此刻所在的节点，next_node 是回答完这句后应进入的节点。"
+            "二者都必须是 nodes 里的 id，判断不了则填 null。不要按 nodes 的顺序自动取下一个。\n"
             '输出 json，例如 {"customer_intent": "要求分期", "emotion": "焦虑", "emotion_intensity": 0.5, '
-            '"monthly_affordable": null, "periods": 12, "amount": null, "date": null, "confidence": 0.85, "conflict": false}'
+            '"monthly_affordable": null, "periods": 12, "amount": null, "date": null, "confidence": 0.85, '
+            '"conflict": false, "current_node": null, "next_node": null}'
         )
+
+    @staticmethod
+    def _node_id(value, context: dict | None) -> str | None:
+        ids = {n.get("id") for n in (context or {}).get("nodes") or [] if isinstance(n, dict)}
+        return value if isinstance(value, str) and value in ids else None
 
     @staticmethod
     def _infer_from_entities(intent: str, rx: dict) -> str:
@@ -161,6 +172,8 @@ class Understander:
                     date=rx["date"] or (str(out["date"]) if out.get("date") else None),
                     monthly_affordable=rx["monthly_affordable"] or _num(out.get("monthly_affordable")),
                     confidence=_unit(out.get("confidence"), 0.5), conflict=bool(out.get("conflict")), method="大模型",
+                    current_node=self._node_id(out.get("current_node"), context),
+                    next_node=self._node_id(out.get("next_node"), context),
                 )
             except LLMError:
                 pass

@@ -43,8 +43,9 @@ extra_rules:
     action: 人工接管
     patterns: ['拖车', '收车', '把(你的)?车(拖|收)走']
     semantic: false
+exit:
+  max_refusals: 3
 handoff:
-  max_refusals: 2
   emotion: {types: [愤怒], min_intensity: 0.9}
   low_confidence_turns: 2
 speech:
@@ -71,5 +72,6 @@ speech:
     询问还款时间: "可以按这个方案安排：{plan_brief}。请问您打算哪一天还款？"
     确认方案: "方案是{plan_brief}，还款时间{repay_date}。请确认是否按这个方案和时间还款。"
     结束确认: "好的，已确认您的还款安排：{plan_brief}，还款时间{repay_date}。请按约定时间还款，这次沟通先到这里。"
+    拒绝结束: "理解您目前不考虑还款。这次沟通先到这里，我们不再继续催促。之后如果您愿意协商，可以再联系我们。"
 report_sections: [逾期概况, 还款意愿评估, 情绪感知, 合规审计, 协商记录, 建议策略]
 post_tasks: [write_call_record, write_behavior, write_emotion, refresh_profile, generate_report, create_todos]

@@ -72,6 +72,29 @@ def format_speech(pack: dict, key: str, **extra) -> str:
     return (templates.get(key) or templates["default"]).format_map(_Safe({**speech_vars(pack), **extra}))
 
 
+def refusal_limit(pack: dict) -> int | None:
+    """业务包 exit.max_refusals。未配置或不是正整数时不因拒绝主动结束。"""
+    raw = (pack.get("exit") or {}).get("max_refusals")
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        return None
+    n = int(raw)
+    return n if n >= 1 else None
+
+
+def _plan_fact_block(plan: PlanResult) -> dict:
+    block = {
+        "欠款总额": f"{plan.principal:.0f}元",
+        "分期方案": [{"模板": p.template_id, "类型": p.template_type, "期数": p.periods,
+                   "月供": f"{p.monthly_payment:.2f}元", "年化利率": f"{p.annual_rate * 100:.2f}%",
+                   "手续费": f"{p.fee:.2f}元", "总成本": f"{p.total_cost:.2f}元", "说明": p.note}
+                  for p in plan.plans],
+        "方案口径": plan.method,
+    }
+    if plan.message:
+        block["方案提示"] = plan.message
+    return block
+
+
 class Snapshot(BaseModel):
     customer_id: str
     profile: dict = {}
@@ -301,9 +324,12 @@ class CollectionAgent:
                               emotion_intensity=0.0, stage=self.stage, compliance=checks, needs_review=True,
                               review_reasons=review)
         ctx = self.cases.context(self.session_id)
+        follow_up = any(m["role"] == "AI坐席" for m in self.cases.messages(self.session_id))
+        understand_ctx = {"summary": ctx["summary"], "recent": ctx["recent"][-4:]}
+        if follow_up:
+            understand_ctx["nodes"] = [{"id": s["id"], "goal": s["goal"]} for s in self.pack["stages"]]
         try:
-            u = self.registry.call("intent_emotion", trace, text=clean,
-                                   context={"summary": ctx["summary"], "recent": ctx["recent"][-4:]})
+            u = self.registry.call("intent_emotion", trace, text=clean, context=understand_ctx)
         except CallError as e:
             u = self.understander.fallback_customer(clean)
             trace.add("understand", "意图识别降级", "warn", reason=e.reason)
@@ -315,8 +341,9 @@ class CollectionAgent:
         if u.confidence < self.intents.get("low_confidence", 0.6) or u.conflict:
             review.append("意图识别置信度低或存在意图冲突，需人工复核")
         had_dialog = bool(self._mem("intents"))
+        stage_before = self.stage
         self._update_memory(u, clean)
-        self.stage = self._next_stage(u.customer_intent)
+        self._turn_nodes = self._apply_nodes(u, follow_up, stage_before)
         actions = list(self.pack["intent_actions"].get(u.customer_intent, []))
         if combo == COMBO_PLAN and "installment_plan" not in actions:
             actions.append("installment_plan")
@@ -356,13 +383,16 @@ class CollectionAgent:
             review.append(f"意愿评分失败：{e.reason}")
         system_intent = combo or self.intents["customer_to_system"].get(u.customer_intent, "提醒催收")
         handoff_reason = self._handoff_reason(u, cp3, done)
-        facts = self._facts(plan, loans, will)
+        facts = self._facts(plan, loans, will, follow_up=follow_up)
         self._capture_agreement(u, clean, plan)
-        end_reason = None if handoff_reason or combo == COMBO_HANDOFF else self._agreement_end_reason()
+        blocked = bool(handoff_reason or combo == COMBO_HANDOFF)
+        refusal_end = None if blocked else self._refusal_end_reason()
+        end_reason = refusal_end or (None if blocked else self._agreement_end_reason())
         if end_reason:
             self.stage = "结束"
-            reply = format_speech(self.pack, "结束确认", plan_brief=self._mem("agreed_plan") or "",
-                                  repay_date=self._mem("repay_date") or "")
+            reply = (format_speech(self.pack, "拒绝结束") if refusal_end else
+                     format_speech(self.pack, "结束确认", plan_brief=self._mem("agreed_plan") or "",
+                                   repay_date=self._mem("repay_date") or ""))
             checks = [self._check(reply, now, trace, semantic=False)]
         elif combo == COMBO_HANDOFF:
             handoff_reason = handoff_reason or "客户情绪强烈并要求停止联系或转人工"
@@ -375,7 +405,7 @@ class CollectionAgent:
                 reply = "非常抱歉给您带来困扰。\n" + reply
             checks = [self._check(reply, now, trace, semantic=False)]
         else:
-            reply, checks, forced = self._compose(clean, u, system_intent, facts, now, trace)
+            reply, checks, forced = self._compose(clean, u, system_intent, facts, now, trace, follow_up=follow_up)
             if forced:
                 handoff_reason, system_intent = forced, "人工接管"
         if end_reason is None and not handoff_reason and self._skip_amount_question() and _ASK_AMOUNT.search(reply):
@@ -403,7 +433,8 @@ class CollectionAgent:
             self._set("intents", [*intents, u.customer_intent], "意图识别")
         self._append("emotions", {"turn": self._turn(), "emotion": u.emotion, "intensity": u.emotion_intensity,
                                   "text": text[:40]}, "情绪识别")
-        self._set("refusals", self._mem("refusals", 0) + 1 if u.customer_intent == "拒绝还款" else 0, "意图识别")
+        if u.customer_intent == "拒绝还款":
+            self._set("refusals", self._mem("refusals", 0) + 1, "意图识别")
         low = u.confidence < self.intents.get("low_confidence", 0.6)
         self._set("low_conf_turns", self._mem("low_conf_turns", 0) + 1 if low else 0, "意图识别")
         if u.monthly_affordable:
@@ -444,13 +475,34 @@ class CollectionAgent:
                      f"年化{p.annual_rate * 100:.2f}% 手续费{p.fee:.2f}元" for p in plan.plans],
             "结果": plan.message or ("已提供方案" if plan.plans else "无可用方案"),
         }, "installment_plan")
+        if plan.plans:
+            self._set("saved_plans", _plan_fact_block(plan), "分期方案")
+
+    def _goal_of(self, stage_id: str) -> str:
+        return next((s["goal"] for s in self.pack["stages"] if s["id"] == stage_id), "")
+
+    def _apply_nodes(self, u: Understanding, follow_up: bool, stage_before: str) -> tuple[str, str | None] | None:
+        """跟进轮采用理解模块按上下文判断的节点。没有判断时不编造下一节点。"""
+        if not follow_up:
+            self.stage = self._next_stage(u.customer_intent)
+            return None
+        if not (u.current_node or u.next_node):
+            self.stage = self._next_stage(u.customer_intent)
+            return self.stage, None
+        current = u.current_node or stage_before
+        nxt = u.next_node
+        first = self.pack["stages"][0]["id"]
+        if stage_before == first and not self._mem("verified"):
+            current, nxt = first, None
+        if nxt == current:
+            nxt = None
+        self.stage = nxt or current
+        return current, nxt
 
     def _handoff_reason(self, u: Understanding, cp3: CheckResult, done: list[str]) -> str | None:
         h = self.pack["handoff"]
         if "request_handoff" in done or "要求转人工" in cp3.signals:
             return "客户要求转人工"
-        if self._mem("refusals", 0) >= h["max_refusals"]:
-            return f"客户连续拒绝{self._mem('refusals')}次"
         emo = h["emotion"]
         if u.emotion in emo["types"] and u.emotion_intensity >= emo["min_intensity"]:
             return f"客户情绪{u.emotion}（强度{u.emotion_intensity:.2f}）超过阈值"
@@ -458,20 +510,20 @@ class CollectionAgent:
             return "识别置信度连续偏低"
         return None
 
-    def _facts(self, plan: PlanResult | None, loans: LoanPriority | None, will: Willingness | None) -> dict:
+    def _facts(self, plan: PlanResult | None, loans: LoanPriority | None, will: Willingness | None,
+               follow_up: bool = False) -> dict:
         ods = self.snapshot.overdues
         f: dict = {"欠款总额": f"{sum(o.get('overdue_amount') or 0 for o in ods):.0f}元", "逾期笔数": len(ods)}
         if ods:
             f["最长逾期"] = f"{max(o.get('overdue_days') or 0 for o in ods)}天"
         if plan:
-            f["欠款总额"] = f"{plan.principal:.0f}元"
-            f["分期方案"] = [{"模板": p.template_id, "类型": p.template_type, "期数": p.periods,
-                          "月供": f"{p.monthly_payment:.2f}元", "年化利率": f"{p.annual_rate * 100:.2f}%",
-                          "手续费": f"{p.fee:.2f}元", "总成本": f"{p.total_cost:.2f}元", "说明": p.note}
-                         for p in plan.plans]
-            f["方案口径"] = plan.method
-            if plan.message:
-                f["方案提示"] = plan.message
+            f.update(_plan_fact_block(plan))
+        elif follow_up and self._mem("saved_plans"):
+            f.update(self._mem("saved_plans"))
+        if follow_up and ods and "逾期明细" not in f:
+            f["逾期明细"] = [{"编号": o.get("overdue_id"), "贷款类型": o.get("loan_type") or "未知",
+                          "逾期天数": o.get("overdue_days"),
+                          "欠款": f"{float(o.get('overdue_amount') or 0):.0f}元"} for o in ods]
         if loans:
             f["逾期明细"] = [{"编号": i.overdue_id, "贷款类型": i.loan_type or "未知", "逾期天数": i.overdue_days,
                           "欠款": f"{i.overdue_amount:.0f}元"} for i in loans.items]
@@ -522,6 +574,13 @@ class CollectionAgent:
         if self._mem("repay_confirmed") and (plan_text or self._mem("offered_plan")):
             self._set("agreed_plan", plan_text or self._mem("offered_plan"), "客户确认方案")
 
+    def _refusal_end_reason(self) -> str | None:
+        limit = refusal_limit(self.pack)
+        count = self._mem("refusals", 0)
+        if limit is not None and count >= limit:
+            return f"客户累计明确拒绝{count}次"
+        return None
+
     def _agreement_end_reason(self) -> str | None:
         if self._mem("repay_confirmed") and self._mem("agreed_plan") and self._mem("repay_date"):
             return _END_AGREED
@@ -538,12 +597,12 @@ class CollectionAgent:
         return format_speech(self.pack, "询问还款时间", plan_brief=plan_brief)
 
     def _compose(self, text: str, u: Understanding, system_intent: str, facts: dict, now: datetime,
-                 trace: Trace) -> tuple[str, list[CheckResult], str | None]:
+                 trace: Trace, follow_up: bool = False) -> tuple[str, list[CheckResult], str | None]:
         max_rw = self.engine.cfg["checkpoints"]["agent_speech"].get("max_rewrites", 2)
         checks: list[CheckResult] = []
         hint = ""
         for _ in range(max_rw + 1):
-            draft = self._draft(text, u, system_intent, facts, hint, trace)
+            draft = self._draft(text, u, system_intent, facts, hint, trace, follow_up=follow_up)
             r = self._check(draft, now, trace)
             checks.append(r)
             if r.passed:
@@ -568,14 +627,26 @@ class CollectionAgent:
         checks.append(self._check(reply, now, trace, semantic=False))
         return reply, checks, "话术多次改写仍不合规"
 
-    def _draft(self, text: str, u: Understanding, system_intent: str, facts: dict, hint: str, trace: Trace) -> str:
+    def _stage_goal(self) -> str:
+        return self._goal_of(self.stage)
+
+    def _draft(self, text: str, u: Understanding, system_intent: str, facts: dict, hint: str, trace: Trace,
+               follow_up: bool = False) -> str:
         ctx = self.cases.context(self.session_id)
         payload = {
             "system_intent": system_intent, "customer_intent": u.customer_intent,
-            "stage_goal": next((s["goal"] for s in self.pack["stages"] if s["id"] == self.stage), ""),
+            "stage_goal": self._stage_goal(),
             "客户说": text, "客户情绪": f"{u.emotion}（{u.emotion_intensity:.2f}）", "事实": facts,
             "对话摘要": ctx["summary"], "最近对话": ctx["recent"],
         }
+        if follow_up and self._turn_nodes:
+            current, nxt = self._turn_nodes
+            payload["跟进"] = True
+            payload["当前节点"] = current
+            payload["当前目标"] = self._goal_of(current)
+            if nxt:
+                payload["下一节点"] = nxt
+                payload["下一节点目标"] = self._goal_of(nxt)
         try:
             return self.registry.call("generate_reply", trace, payload=payload, rewrite_hint=hint).reply
         except CallError as e:
@@ -585,12 +656,22 @@ class CollectionAgent:
                 return f"话术生成超时，已改为模板说明。{body}"
             return body
 
-    def _reply_system(self, stage_goal: str) -> str:
+    def _reply_system(self, stage_goal: str, follow_up: bool = False) -> str:
         sp = self.pack["speech"]
-        return (
-            f"你是{self.pack['name']}的 AI 坐席，工号{sp['agent_id']}，正在和客户本人通话。语气：{sp['tone']}。\n"
-            f"当前阶段目标：{stage_goal}。\n"
-            "按系统意图组织话术，措辞可以变化，步骤和语义按下面的逻辑，数字只用“事实”里的：\n"
+        if follow_up:
+            guide = (
+                "这是跟进轮。先直接回答客户最后一句。客户若是在答应或继续上一句的提议，就完成那件事。\n"
+                "最近对话里已经说过的句子不要再说。数字只用“事实”里的数据。\n"
+                "「当前节点」和「下一节点」已根据上下文判断，写在输入里。不要改写节点名称。\n"
+                "若输入有「下一节点」，回答之后落实「下一节点目标」，推进到该节点。\n"
+                "若输入没有「下一节点」，回答之后落实「当前目标」，停在当前节点。\n"
+            )
+        else:
+            guide = (
+                f"当前阶段目标：{stage_goal}。\n"
+                "按系统意图组织话术，措辞可以变化，步骤和语义按下面的逻辑，数字只用“事实”里的：\n"
+            )
+        script = "" if follow_up else (
             "- 提醒催收：先报工号，请客户提供身份证后四位核验身份，核验后再说明逾期并询问还款安排。\n"
             "- 还款意愿评估：先共情，询问预计哪天发工资，说明宽限申请已记录，再用事实中的分期方案推荐，并说明逾期天数继续增加会影响信用，最后问是否方便了解。\n"
             "- 分期方案协商：还没有可承受金额、也没有「已问过金额」时，先说明可以分期，再问一次每月可承受金额，然后推荐事实中的方案，并说明会生成协商记录。已有可承受金额或已问过金额时，不要再问还多少或每月可承受金额，直接推荐事实中的方案；还没有还款时间时只问哪一天还。\n"
@@ -599,6 +680,10 @@ class CollectionAgent:
             "- 人工接管：马上转接人工，说明对话记录和账户信息已同步、无需重复，并给出预计等待秒数。\n"
             "- 多贷款管理：先给出笔数、合计金额和风险等级，再按事实逐笔列出贷款类型、逾期天数和欠款金额，建议优先处理逾期天数最长的一笔，询问是否同意。\n"
             "系统意图含「+」时，按加号两侧的逻辑依次说完。\n"
+        )
+        return (
+            f"你是{self.pack['name']}的 AI 坐席，工号{sp['agent_id']}，正在和客户本人通话。语气：{sp['tone']}。\n"
+            + guide + script +
             "硬性要求：1. 金额、期数、利率、日期、笔数只能引用“事实”里的数据，不得编造；"
             "2. 不得承诺减免、免息、延期的审批结果，只能说提交申请、以审批为准；"
             "3. 不得威胁、辱骂、冒充公检法、提及联系客户亲友，不得说不还款没有后果；"
@@ -610,11 +695,12 @@ class CollectionAgent:
         )
 
     def _generate_reply(self, a: ReplyIn) -> ReplyOut:
-        p = a.payload
+        p = dict(a.payload)
+        follow_up = bool(p.pop("跟进", False))
         if not self.llm.available:
             return ReplyOut(reply=self._template_reply(p["customer_intent"], p["system_intent"], p["事实"]), source="模板")
         user = {**p, "改写要求": a.rewrite_hint} if a.rewrite_hint else p
-        out = self.llm.json("reply", self._reply_system(p["stage_goal"]), user,
+        out = self.llm.json("reply", self._reply_system(p.get("stage_goal", ""), follow_up=follow_up), user,
                             names=[self.snapshot.profile.get("customer_name") or ""])
         reply = str(out.get("reply") or "").strip()
         if not reply:

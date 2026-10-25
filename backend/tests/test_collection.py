@@ -130,15 +130,27 @@ def test_amount_asked_once_then_confirmed_plan_ends(db_conn):
 
 
 def test_handoff_on_request_and_repeated_refusal(db_conn):
-    out = make_agent(db_conn).handle("不跟机器人说了，给我转人工", NOW, Trace())
-    assert out.handoff and out.system_intent == "人工接管" and "转接人工" in out.reply
     agent = make_agent(db_conn)
-    assert not agent.handle("没钱，不还", NOW, Trace()).handoff
-    second = agent.handle("说了没钱，不还", NOW, Trace())
-    assert second.handoff and "连续拒绝" in second.handoff_reason
-    pkg = agent.handoff_package(second.handoff_reason, NOW)
+    out = agent.handle("不跟机器人说了，给我转人工", NOW, Trace())
+    assert out.handoff and out.system_intent == "人工接管" and "转接人工" in out.reply
+    pkg = agent.handoff_package(out.handoff_reason, NOW)
     assert {"客户档案快照", "对话全文", "情绪轨迹", "还款意愿", "协商记录", "命中规则", "建议下一步"} <= set(pkg)
     assert "客户0003" not in str(pkg["客户档案快照"])
+    agent = make_agent(db_conn)
+    assert agent.handle("没钱，不还", NOW, Trace()).end_reason is None
+    assert agent.handle("能不能分期", NOW, Trace()).end_reason is None
+    assert agent.handle("还不了", NOW, Trace()).end_reason is None
+    third = agent.handle("说了不还", NOW, Trace())
+    assert third.end_reason == "客户累计明确拒绝3次" and not third.handoff and third.stage == "结束"
+    shorter = make_agent(db_conn)
+    shorter.pack["exit"] = {"max_refusals": 2}
+    shorter.handle("没钱，不还", NOW, Trace())
+    assert shorter.handle("还不了", NOW, Trace()).end_reason == "客户累计明确拒绝2次"
+    unset = make_agent(db_conn)
+    unset.pack.pop("exit", None)
+    unset.handle("没钱，不还", NOW, Trace())
+    unset.handle("还不了", NOW, Trace())
+    assert unset.handle("说了不还", NOW, Trace()).end_reason is None
 
 
 def test_garbled_input_asks_to_repeat(db_conn):
@@ -199,3 +211,78 @@ def test_severe_or_pack_rule_forces_handoff(db_conn):
     out = make_agent(db_conn, llm_client=scripted(["再不还就安排拖车"])).handle("能不能分期", NOW, Trace())
     assert out.handoff and out.compliance[0].hits[0].rule_id == "BR-AUTO-01"
     assert "转接人工" in out.reply
+
+
+def _intent_script(turns):
+    seq = iter(turns)
+
+    def responder(system, user):
+        purpose = system.splitlines()[0].removeprefix("任务代号：")
+        if purpose == "understand":
+            item = next(seq)
+            return {"customer_intent": item["intent"], "emotion": "平静", "emotion_intensity": 0.2,
+                    "confidence": 0.9, "current_node": item.get("current"), "next_node": item.get("next")}
+        if purpose == "reply":
+            return {"reply": "好的，我按您刚才说的继续。"}
+        return {"hits": []}
+
+    return FakeLLM(responder)
+
+
+def _calls(llm, purpose):
+    return [(system, user) for system, user in llm.calls if system.startswith(f"任务代号：{purpose}")]
+
+
+def _goal(agent, stage_id):
+    return next(s["goal"] for s in agent.pack["stages"] if s["id"] == stage_id)
+
+
+def test_followup_nodes_come_from_context(db_conn):
+    import json
+
+    llm = _intent_script([
+        {"intent": "其他"},
+        {"intent": "要求分期", "current": "告知逾期", "next": "了解原因"},
+        {"intent": "其他", "current": "协商", "next": "结束"},
+    ])
+    agent = make_agent(db_conn, pack_id="consumer_finance", customer_id="C0001", llm_client=llm)
+    first = agent.handle("你好", NOW, Trace())
+    assert first.stage == "告知逾期"
+    system, user = _calls(llm, "reply")[-1]
+    assert "按系统意图组织话术" in system and "先直接回答客户最后一句" not in system
+    assert "当前节点" not in json.loads(user)
+
+    second = agent.handle("能不能分期", NOW, Trace())
+    assert second.stage == "了解原因" and second.plan
+    understood = json.loads(_calls(llm, "understand")[-1][1])
+    assert {n["id"] for n in understood["上下文"]["nodes"]} == {s["id"] for s in agent.pack["stages"]}
+    assert "了解原因" not in _calls(llm, "understand")[-1][0]
+    system, user = _calls(llm, "reply")[-1]
+    payload = json.loads(user)
+    assert "先直接回答客户最后一句" in system and "按系统意图组织话术" not in system
+    assert _goal(agent, "了解原因") not in system
+    assert payload["当前节点"] == "告知逾期" and payload["当前目标"] == _goal(agent, "告知逾期")
+    assert payload["下一节点"] == "了解原因" and payload["下一节点目标"] == _goal(agent, "了解原因")
+    assert payload["事实"]["逾期明细"] and payload["事实"]["分期方案"]
+
+    third = agent.handle("说吧", NOW, Trace())
+    assert third.stage == "结束"
+    payload = json.loads(_calls(llm, "reply")[-1][1])
+    assert payload["当前节点"] == "协商" and payload["下一节点"] == "结束"
+    assert payload["下一节点目标"] == _goal(agent, "结束")
+    assert payload["事实"]["分期方案"]
+
+
+def test_unverified_followup_does_not_leave_identity(db_conn):
+    import json
+
+    llm = _intent_script([{"intent": "其他", "current": "核身", "next": "告知逾期"}])
+    agent = make_agent(db_conn, verified=False, llm_client=llm)
+    agent.opening(NOW, Trace())
+    out = agent.handle("你好", NOW, Trace())
+    assert out.stage == "核身"
+    system, user = _calls(llm, "reply")[-1]
+    payload = json.loads(user)
+    assert "先直接回答客户最后一句" in system and _goal(agent, "核身") not in system
+    assert payload["当前节点"] == "核身" and payload["当前目标"] == _goal(agent, "核身")
+    assert "下一节点" not in payload

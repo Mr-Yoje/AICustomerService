@@ -16,6 +16,7 @@ from .config_center import ConfigCenter
 from .loans import prioritize
 from .memory import MemoryStore
 from .reports import render_report_markdown, session_memory, session_report
+from .agents.collection import refusal_limit
 from .scoring import Willingness, score_customer
 
 log = logging.getLogger("cagent")
@@ -152,6 +153,10 @@ def create_todos(ctx: PostCtx) -> None:
     if (gate := ctx.mem.get("gate")) and gate.get("next_allowed"):
         cs.add_todo(ctx.case_id, sid, "下次可联系", f"外呼被 {'、'.join(gate['rule_ids'])} 拦截，下次可联系时间到后再发起",
                     gate["next_allowed"], ctx.now, todo_id=f"TD-{sid}-next-contact")
+    limit = refusal_limit(ctx.pack)
+    if limit is not None and ctx.mem.get("refusals", 0) >= limit:
+        cs.add_todo(ctx.case_id, sid, "拒绝跟进", f"客户累计明确拒绝{ctx.mem['refusals']}次，本次催收已结束",
+                    None, ctx.now, todo_id=f"TD-{sid}-refusal")
 
 
 TASKS: dict[str, Callable[[PostCtx], None]] = {
