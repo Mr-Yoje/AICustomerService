@@ -4,6 +4,7 @@ import contextvars
 import logging
 import sqlite3
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
@@ -16,7 +17,7 @@ from .config_center import ConfigCenter
 from .loans import prioritize
 from .memory import MemoryStore
 from .reports import render_report_markdown, session_memory, session_report
-from .agents.collection import refusal_limit
+from .agents.collection import max_step
 from .scoring import Willingness, score_customer
 
 log = logging.getLogger("cagent")
@@ -153,7 +154,7 @@ def create_todos(ctx: PostCtx) -> None:
     if (gate := ctx.mem.get("gate")) and gate.get("next_allowed"):
         cs.add_todo(ctx.case_id, sid, "下次可联系", f"外呼被 {'、'.join(gate['rule_ids'])} 拦截，下次可联系时间到后再发起",
                     gate["next_allowed"], ctx.now, todo_id=f"TD-{sid}-next-contact")
-    limit = refusal_limit(ctx.pack)
+    limit = max_step(ctx.pack)
     if limit is not None and ctx.mem.get("refusals", 0) >= limit:
         cs.add_todo(ctx.case_id, sid, "拒绝跟进", f"客户累计明确拒绝{ctx.mem['refusals']}次，本次催收已结束",
                     None, ctx.now, todo_id=f"TD-{sid}-refusal")
@@ -190,8 +191,6 @@ class PostCallRunner:
         if sync:
             self._run(session_id)
         else:
-            threading.Thread(target=self._run, args=(session_id,), daemon=True).start()
-
             ctx = contextvars.copy_context()
             threading.Thread(target=ctx.run, args=(self._run, session_id), daemon=True).start()
 
@@ -222,7 +221,9 @@ class PostCallRunner:
 
     def _run_task(self, session_id: str, name: str, pack: dict, policy: dict) -> bool:
         error = ""
-        for _ in range(self.max_retries + 1):
+        for attempt in range(1, self.max_retries + 2):
+            if attempt > 1:
+                time.sleep(min(0.2 * (2 ** (attempt - 2)), 1.0))
             conn = db.connect(self.db_path)
             try:
                 self._mark(conn, session_id, name, "执行中", 1, None)

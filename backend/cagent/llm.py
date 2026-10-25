@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Callable, Iterable, Iterator, Protocol
 
 from .desensitize import MaskMap, display_mask, mask
+from .limits import load_limits
 
 # 流式片段末尾可能是未闭合的占位符或被截断的号码，需等后续片段到达后再还原与脱敏
 _HOLD = re.compile(r"(<[^>]*|(?:客户?)?[\dXx]*)$")
@@ -89,6 +90,14 @@ class LLMClient(Protocol):
     def stream_text(self, system: str, user: str, *, max_tokens: int = 800) -> Iterator[str]: ...
 
 
+def _allowed_base_url(base: str | None) -> str:
+    url = (base or "").rstrip("/")
+    allowed = set(load_limits()["allowed_base_urls"])
+    if url not in allowed:
+        raise LLMError("大模型地址不在允许名单")
+    return url
+
+
 class DeepSeekClient:
     def __init__(self, cfg: dict):
         from openai import OpenAI
@@ -97,8 +106,8 @@ class DeepSeekClient:
         if not key:
             raise LLMError("未设置 DEEPSEEK_API_KEY")
         self.model = os.getenv("DEEPSEEK_MODEL", cfg.get("model", "deepseek-flash"))
-        self.client = OpenAI(api_key=key, base_url=os.getenv("DEEPSEEK_BASE_URL", cfg.get("base_url")),
-                             timeout=cfg.get("timeout_s", 15), max_retries=0)
+        base_url = _allowed_base_url(os.getenv("DEEPSEEK_BASE_URL", cfg.get("base_url")))
+        self.client = OpenAI(api_key=key, base_url=base_url, timeout=cfg.get("timeout_s", 15), max_retries=0)
         self.temperature = cfg.get("temperature", 0)
         self.retries = cfg.get("max_retries", 1)
         self.max_tokens = cfg.get("max_tokens", 800)
@@ -111,7 +120,9 @@ class DeepSeekClient:
     def complete_json(self, system: str, user: str, *, max_tokens: int = 800) -> dict:
         self.last_usage = {}
         last: Exception | None = None
-        for _ in range(self.retries + 1):
+        for attempt in range(1, self.retries + 2):
+            if attempt > 1:
+                time.sleep(min(0.2 * (2 ** (attempt - 2)), 1.0))
             try:
                 resp = self.client.chat.completions.create(
                     model=self.model, messages=self._messages(system, user), response_format={"type": "json_object"},
@@ -213,9 +224,20 @@ class GuardedLLM:
             found = []
         return [n for n in (*extra, *found) if n]
 
+    def _over_budget(self) -> bool:
+        sid = _session_id.get()
+        if not sid:
+            return False
+        used = self.conn.execute(
+            "SELECT COALESCE(SUM(COALESCE(prompt_tokens,0)+COALESCE(completion_tokens,0)),0) "
+            "FROM llm_calls WHERE session_id=?", (sid,)).fetchone()[0]
+        return used >= load_limits()["token_budget"]
+
     def json(self, purpose: str, system: str, payload: dict, *, names: Iterable[str] = ()) -> dict:
         if self.client is None:
             raise LLMError("大模型不可用")
+        if self._over_budget():
+            raise LLMError("已达到本会话 token 预算")
         masked_user, mm = mask(json.dumps(payload, ensure_ascii=False), names=self._names(names))
         full_system = f"任务代号：{purpose}\n{system}"
         start = time.perf_counter()
@@ -230,6 +252,8 @@ class GuardedLLM:
     def stream(self, purpose: str, system: str, payload: dict, *, names: Iterable[str] = ()) -> Iterator[str]:
         if self.client is None:
             raise LLMError("大模型不可用")
+        if self._over_budget():
+            raise LLMError("已达到本会话 token 预算")
         masked_user, mm = mask(json.dumps(payload, ensure_ascii=False), names=self._names(names))
         full_system = f"任务代号：{purpose}\n{system}"
         start = time.perf_counter()

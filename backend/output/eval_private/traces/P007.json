@@ -1,5 +1,5 @@
 {
-  "session_id": "S-1ddf6666",
+  "session_id": "S-01df340a",
   "mode": "运营模式",
   "speaker": "operator",
   "speaker_method": "大模型",
@@ -43,7 +43,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-f300a12806",
+  "trace_id": "TR-749f482b0f",
   "trace": [
     {
       "step": "understand",
@@ -84,7 +84,7 @@
       "detail": {
         "loan_type": "现金贷",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },

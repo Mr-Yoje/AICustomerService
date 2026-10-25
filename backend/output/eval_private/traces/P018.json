@@ -18,7 +18,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-348c4c057c",
+  "trace_id": "TR-77524c200e",
   "trace": [
     {
       "step": "route",
@@ -129,25 +129,25 @@
           "repayments": [
             {
               "repay_id": "RP0072",
-              "repay_amount": 500.0,
+              "repay_amount": "**",
               "repay_time": "2024-12-05",
               "is_on_time": "否"
             },
             {
               "repay_id": "RP0071",
-              "repay_amount": 500.0,
+              "repay_amount": "**",
               "repay_time": "2024-09-18",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0070",
-              "repay_amount": 1000.0,
+              "repay_amount": "**",
               "repay_time": "2024-06-11",
               "is_on_time": "否"
             },
             {
               "repay_id": "RP0069",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-02-20",
               "is_on_time": "是"
             }
@@ -155,7 +155,7 @@
           "memory": {}
         }
       },
-      "ms": 0
+      "ms": 1
     }
   ]
 }

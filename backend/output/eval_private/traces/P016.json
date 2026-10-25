@@ -1,10 +1,10 @@
 {
-  "session_id": "S-99229e4b",
+  "session_id": "S-493b7bf1",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "情绪感知+分期方案协商",
-  "reply": "理解您现在的压力，收入有限确实不容易。您已表达还款意愿，我记录一下。目前可申请12期低息分期，年化利率3.85%，月供**元，手续费**元，总成本**元；也有标准分期可选，月供**元或**元。逾期已58天，继续增加会影响信用。您看这个方案方便了解吗？",
+  "reply": "理解您现在的压力，收入有限确实不容易。您这笔欠款共**元，目前有低息分期方案：分12期，月供**元，年化利率3.85%，手续费**元，总成本**元；另有标准分期，月供**元，年化5.40%。您看哪个方案更合适？确认后我会为您生成协商记录。",
   "usage": null,
   "customer_id": "C**25",
   "hit_rules": [],
@@ -37,7 +37,7 @@
     "还款意愿：65分（中，置信度1.0）",
     "建议策略：协商分期"
   ],
-  "trace_id": "TR-e125600cd3",
+  "trace_id": "TR-b8de8cd953",
   "trace": [
     {
       "step": "route",
@@ -57,7 +57,7 @@
       "detail": {
         "loan_type": "教育贷",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },
@@ -147,25 +147,25 @@
           "repayments": [
             {
               "repay_id": "RP0060",
-              "repay_amount": 500.0,
+              "repay_amount": "**",
               "repay_time": "2024-12-24",
               "is_on_time": "否"
             },
             {
               "repay_id": "RP0059",
-              "repay_amount": 1000.0,
+              "repay_amount": "**",
               "repay_time": "2024-09-10",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0058",
-              "repay_amount": 1000.0,
+              "repay_amount": "**",
               "repay_time": "2024-06-05",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0057",
-              "repay_amount": 1500.0,
+              "repay_amount": "**",
               "repay_time": "2024-02-27",
               "is_on_time": "是"
             }
@@ -193,7 +193,7 @@
               "overdue_id": "O0059",
               "loan_id": "L0040",
               "loan_type": "教育贷",
-              "overdue_amount": 3800.0,
+              "overdue_amount": "**",
               "overdue_days": 58,
               "overdue_periods": 3,
               "last_repay_date": "2025-08-23",
@@ -204,7 +204,7 @@
               "overdue_id": "O0057",
               "loan_id": "L0039",
               "loan_type": "消费贷",
-              "overdue_amount": 5200.0,
+              "overdue_amount": "**",
               "overdue_days": 42,
               "overdue_periods": 2,
               "last_repay_date": "2025-09-08",
@@ -215,7 +215,7 @@
               "overdue_id": "O0060",
               "loan_id": "L0040",
               "loan_type": "教育贷",
-              "overdue_amount": 800.0,
+              "overdue_amount": "**",
               "overdue_days": 20,
               "overdue_periods": 1,
               "last_repay_date": "2025-08-23",
@@ -226,7 +226,7 @@
               "overdue_id": "O0058",
               "loan_id": "L0039",
               "loan_type": "消费贷",
-              "overdue_amount": 1200.0,
+              "overdue_amount": "**",
               "overdue_days": 12,
               "overdue_periods": 1,
               "last_repay_date": "2025-09-08",
@@ -234,7 +234,7 @@
               "owner_conflict": false
             }
           ],
-          "total_amount": 11000.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 O0059（教育贷，逾期58天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": []
@@ -369,7 +369,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-99229e4b"
+        "session_id": "S-493b7bf1"
       },
       "ms": 0
     },
@@ -392,7 +392,7 @@
           "customer_intent": "要求分期",
           "emotion": "焦虑",
           "emotion_intensity": 0.6,
-          "amount": 10000.0,
+          "amount": "**",
           "periods": null,
           "date": null,
           "monthly_affordable": null,
@@ -403,7 +403,7 @@
           "next_node": null
         }
       },
-      "ms": 1113
+      "ms": 894
     },
     {
       "step": "understand",
@@ -454,7 +454,7 @@
         },
         "output": {
           "customer_id": "C**25",
-          "principal": 11000.0,
+          "principal": "**",
           "overdue_ids": [
             "O0057",
             "O0058",
@@ -477,10 +477,10 @@
               "periods": 12,
               "annual_rate": 0.0385,
               "fee_rate": 0.0,
-              "principal": 11000.0,
-              "monthly_payment": 935.9,
-              "fee": 0.0,
-              "total_cost": 11230.74,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -491,10 +491,10 @@
               "periods": 12,
               "annual_rate": 0.054,
               "fee_rate": 0.01,
-              "principal": 11000.0,
-              "monthly_payment": 943.7,
-              "fee": 110.0,
-              "total_cost": 11434.4,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -505,10 +505,10 @@
               "periods": 12,
               "annual_rate": 0.072,
               "fee_rate": 0.015,
-              "principal": 11000.0,
-              "monthly_payment": 952.81,
-              "fee": 165.0,
-              "total_cost": 11598.7,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -581,9 +581,7 @@
                   "说明": ""
                 }
               ],
-              "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取",
-              "还款意愿": "65分（中，置信度1.0）",
-              "还款意愿等级": "中"
+              "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取"
             },
             "对话摘要": "",
             "最近对话": []
@@ -591,11 +589,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "理解您现在的压力，收入有限确实不容易。您已表达还款意愿，我记录一下。目前可申请12期低息分期，年化利率3.85%，月供**元，手续费**元，总成本**元；也有标准分期可选，月供**元或**元。逾期已58天，继续增加会影响信用。您看这个方案方便了解吗？",
+          "reply": "理解您现在的压力，收入有限确实不容易。您这笔欠款共**元，目前有低息分期方案：分12期，月供**元，年化利率3.85%，手续费**元，总成本**元；另有标准分期，月供**元，年化5.40%。您看哪个方案更合适？确认后我会为您生成协商记录。",
           "source": "大模型"
         }
       },
-      "ms": 1755
+      "ms": 1285
     },
     {
       "step": "guard",

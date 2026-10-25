@@ -43,7 +43,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-efb0d6dae3",
+  "trace_id": "TR-925e8f3d4b",
   "trace": [
     {
       "step": "route",
@@ -63,7 +63,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },

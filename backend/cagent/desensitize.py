@@ -11,12 +11,19 @@ PATTERNS = [
     ("ID", re.compile(r"(?<!\d)\d{17}[\dXx](?!\d)")),
     ("PHONE", re.compile(r"(?<!\d)1[3-9]\d{9}(?!\d)")),
     ("AMOUNT", re.compile(r"(?<![\dA-Za-z_])\d+(?:,\d{3})*(?:\.\d+)?\s*元")),
+    ("AMOUNT", re.compile(
+        r'("(?:overdue_amount|repay_amount|total_amount|principal|monthly_payment|monthly_income|amount|fee|interest|total_cost)"\s*:\s*)(-?\d+(?:\.\d+)?)'
+    )),
 ]
 
 _YUAN = re.compile(r"(?<![\dA-Za-z_])\d+(?:,\d{3})*(?:\.\d+)?\s*元")
 _HONORIFIC = re.compile(r"[\u4e00-\u9fff]{1,2}(?:先生|女士)")
 _CID = re.compile(r"(?<![A-Za-z0-9])C(\d{2})(\d{2})(?!\d)")
 SENSITIVE_KEYS = {"customer_name", "monthly_income", "credit_score", "age", "occupation", "phone", "id_card"}
+AMOUNT_KEYS = {
+    "overdue_amount", "repay_amount", "total_amount", "principal", "monthly_payment",
+    "monthly_income", "amount", "fee", "interest", "paid_amount", "penalty", "total_cost",
+}
 
 
 @dataclass
@@ -52,7 +59,7 @@ def display_mask(text: str) -> str:
 
 
 def export_mask(text: str) -> str:
-    """评测结果、轨迹和审计导出使用，比界面展示多遮住金额、称谓和画像数字。"""
+    """轨迹文本、审计日志和报告样例使用，比界面展示多遮住金额、称谓和画像数字。评测 results.csv 不使用。"""
     text = display_mask(text)
     text = _CID.sub(r"C**\2", text)
     text = _YUAN.sub("**元", text)
@@ -60,6 +67,25 @@ def export_mask(text: str) -> str:
     text = re.sub(r"(\*\*岁，)[^，\n]{1,16}(，)", r"\1**\2", text)
     text = re.sub(r"信用评分\d+", "信用评分**", text)
     return _HONORIFIC.sub(lambda m: "*" + m.group(0)[-2:], text)
+
+
+def present(value):
+    """界面接口：证件和手机号按展示规则，金额数值写成 **。话术正文里的金额保留。"""
+    if isinstance(value, str):
+        return display_mask(value)
+    if isinstance(value, dict):
+        out = {}
+        for key, item in value.items():
+            if key in SENSITIVE_KEYS and not isinstance(item, (dict, list)):
+                out[key] = "**" if item not in (None, "") else item
+            elif key in AMOUNT_KEYS and isinstance(item, (int, float)) and not isinstance(item, bool):
+                out[key] = "**"
+            else:
+                out[key] = present(item)
+        return out
+    if isinstance(value, list):
+        return [present(item) for item in value]
+    return value
 
 
 def redact(value):
@@ -71,6 +97,8 @@ def redact(value):
         for key, item in value.items():
             if key in SENSITIVE_KEYS and not isinstance(item, (dict, list)):
                 out[key] = "**" if item not in (None, "") else item
+            elif key in AMOUNT_KEYS and isinstance(item, (int, float)) and not isinstance(item, bool):
+                out[key] = "**"
             else:
                 out[key] = redact(item)
         return out

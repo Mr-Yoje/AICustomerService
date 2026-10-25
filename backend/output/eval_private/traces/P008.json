@@ -1,5 +1,5 @@
 {
-  "session_id": "S-794348c2",
+  "session_id": "S-83911f6d",
   "mode": "催收对话模式",
   "speaker": "operator",
   "speaker_method": "大模型",
@@ -30,7 +30,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-e3b0ffcec8",
+  "trace_id": "TR-4ff1d9ec7a",
   "trace": [
     {
       "step": "route",
@@ -62,7 +62,7 @@
       "detail": {
         "loan_type": "现金贷",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },
@@ -162,43 +162,43 @@
           "repayments": [
             {
               "repay_id": "P-RP0034",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-10-24",
               "is_on_time": "是"
             },
             {
               "repay_id": "P-RP0018",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-10-14",
               "is_on_time": "是"
             },
             {
               "repay_id": "P-RP0036",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-09-07",
               "is_on_time": "是"
             },
             {
               "repay_id": "P-RP0008",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-06-13",
               "is_on_time": "是"
             },
             {
               "repay_id": "P-RP0016",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-04-26",
               "is_on_time": "是"
             },
             {
               "repay_id": "P-RP0030",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-03-07",
               "is_on_time": "否"
             },
             {
               "repay_id": "P-RP0038",
-              "repay_amount": 1000.0,
+              "repay_amount": "**",
               "repay_time": "2024-02-25",
               "is_on_time": "否"
             }
@@ -226,7 +226,7 @@
               "overdue_id": "P-O0020",
               "loan_id": "P-L0007",
               "loan_type": "现金贷",
-              "overdue_amount": 3000.0,
+              "overdue_amount": "**",
               "overdue_days": 180,
               "overdue_periods": 3,
               "last_repay_date": "2025-05-18",
@@ -237,7 +237,7 @@
               "overdue_id": "P-O0017",
               "loan_id": "P-L0011",
               "loan_type": "信用卡分期",
-              "overdue_amount": 20000.0,
+              "overdue_amount": "**",
               "overdue_days": 60,
               "overdue_periods": 3,
               "last_repay_date": "2025-09-26",
@@ -248,7 +248,7 @@
               "overdue_id": "P-O0037",
               "loan_id": "P-L0025",
               "loan_type": "信用卡分期",
-              "overdue_amount": 3000.0,
+              "overdue_amount": "**",
               "overdue_days": 30,
               "overdue_periods": 5,
               "last_repay_date": "2025-02-17",
@@ -256,7 +256,7 @@
               "owner_conflict": true
             }
           ],
-          "total_amount": 26000.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 P-O0020（现金贷，逾期180天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": [
@@ -396,7 +396,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-794348c2"
+        "session_id": "S-83911f6d"
       },
       "ms": 0
     },

@@ -11,6 +11,7 @@ from typing import Iterator
 from pydantic import BaseModel
 
 from cagent.agents.main import MODE_COLLECTION, TurnUsage, MainAgent
+from cagent.desensitize import redact
 from cagent.llm import bind_session, usage_since
 from cagent.narrate import narrate
 from cagent.trace import TraceEvent, jsonable
@@ -71,7 +72,7 @@ class Service:
             turn = self.agent.handle(
                 req.text, session_id=req.session_id, role=ROLES.get(req.role or "", req.role),
                 customer_id=req.customer_id or None, now=req.now,
-                sink=lambda e: emit(("trace", jsonable(e.__dict__ if isinstance(e, TraceEvent) else e))),
+                sink=lambda e: emit(("trace", redact(jsonable(e.__dict__ if isinstance(e, TraceEvent) else e)))),
             )
             # 发起催收时的回复是 AI 坐席开场白，属于发给客户的话术，不能交给大模型改写
             narrated = turn.speaker == "operator" and turn.mode != MODE_COLLECTION

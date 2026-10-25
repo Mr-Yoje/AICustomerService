@@ -1,10 +1,10 @@
 {
-  "session_id": "S-f2107d63",
+  "session_id": "S-601e15e4",
   "mode": "人工接管",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "情绪感知+人工接管",
-  "reply": "非常抱歉给您带来困扰，频繁来电可能让您不适。您的反馈我已经记下，后续会控制联系频次。账单可以改到您方便的时间再沟通，您看哪个时间段合适？\n好的，这就为您转接人工坐席。您刚才说明的情况和账户信息已同步给坐席同事，不需要再重复，请稍候，预计30秒内接通。",
+  "reply": "听得出您现在很着急，觉得机器人帮不上忙，这种感受我理解。\n好的，这就为您转接人工坐席。您刚才说明的情况和账户信息已同步给坐席同事，不需要再重复，请稍候，预计30秒内接通。",
   "usage": null,
   "customer_id": "C**15",
   "hit_rules": [],
@@ -25,7 +25,7 @@
   "willingness_level": "低",
   "strategy": "转人工重点跟进",
   "handoff": true,
-  "handoff_package_id": "ART-7019d85d",
+  "handoff_package_id": "ART-f74cf0af",
   "end_reason": null,
   "needs_review": true,
   "review_reasons": [
@@ -39,7 +39,7 @@
     "建议策略：转人工重点跟进",
     "转人工：客户要求转人工"
   ],
-  "trace_id": "TR-705bbf1b3b",
+  "trace_id": "TR-bcd932e97b",
   "trace": [
     {
       "step": "route",
@@ -59,7 +59,7 @@
       "detail": {
         "loan_type": "教育贷",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },
@@ -149,19 +149,19 @@
           "repayments": [
             {
               "repay_id": "P-RP0024",
-              "repay_amount": 500.0,
+              "repay_amount": "**",
               "repay_time": "2024-10-19",
               "is_on_time": "否"
             },
             {
               "repay_id": "P-RP0011",
-              "repay_amount": 1000.0,
+              "repay_amount": "**",
               "repay_time": "2024-06-15",
               "is_on_time": "否"
             },
             {
               "repay_id": "P-RP0037",
-              "repay_amount": 1500.0,
+              "repay_amount": "**",
               "repay_time": "2024-01-15",
               "is_on_time": "是"
             }
@@ -169,7 +169,7 @@
           "memory": {}
         }
       },
-      "ms": 0
+      "ms": 1
     },
     {
       "step": "call",
@@ -189,7 +189,7 @@
               "overdue_id": "P-O0007",
               "loan_id": "P-L0019",
               "loan_type": "教育贷",
-              "overdue_amount": 8000.0,
+              "overdue_amount": "**",
               "overdue_days": 180,
               "overdue_periods": 6,
               "last_repay_date": "2025-09-18",
@@ -200,7 +200,7 @@
               "overdue_id": "P-O0018",
               "loan_id": "P-L0004",
               "loan_type": "现金贷",
-              "overdue_amount": 12000.0,
+              "overdue_amount": "**",
               "overdue_days": 90,
               "overdue_periods": 3,
               "last_repay_date": "2025-06-25",
@@ -211,7 +211,7 @@
               "overdue_id": "P-O0035",
               "loan_id": "P-L0023",
               "loan_type": "教育贷",
-              "overdue_amount": 1000.0,
+              "overdue_amount": "**",
               "overdue_days": 45,
               "overdue_periods": 2,
               "last_repay_date": "2025-06-20",
@@ -222,7 +222,7 @@
               "overdue_id": "P-O0033",
               "loan_id": "P-L0019",
               "loan_type": "教育贷",
-              "overdue_amount": 500.0,
+              "overdue_amount": "**",
               "overdue_days": 45,
               "overdue_periods": 1,
               "last_repay_date": "2025-06-23",
@@ -233,7 +233,7 @@
               "overdue_id": "P-O0030",
               "loan_id": "P-L0019",
               "loan_type": "教育贷",
-              "overdue_amount": 3000.0,
+              "overdue_amount": "**",
               "overdue_days": 15,
               "overdue_periods": 5,
               "last_repay_date": "2025-07-27",
@@ -244,7 +244,7 @@
               "overdue_id": "P-O0003",
               "loan_id": "P-L0027",
               "loan_type": "消费贷",
-              "overdue_amount": 1000.0,
+              "overdue_amount": "**",
               "overdue_days": 15,
               "overdue_periods": 3,
               "last_repay_date": "2025-02-13",
@@ -255,7 +255,7 @@
               "overdue_id": "P-O0024",
               "loan_id": "P-L0011",
               "loan_type": "信用卡分期",
-              "overdue_amount": 5000.0,
+              "overdue_amount": "**",
               "overdue_days": 3,
               "overdue_periods": 2,
               "last_repay_date": "2025-02-21",
@@ -263,7 +263,7 @@
               "owner_conflict": true
             }
           ],
-          "total_amount": 30500.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 P-O0007（教育贷，逾期180天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": [
@@ -411,7 +411,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-f2107d63"
+        "session_id": "S-601e15e4"
       },
       "ms": 0
     },
@@ -445,7 +445,7 @@
           "next_node": null
         }
       },
-      "ms": 1020
+      "ms": 784
     },
     {
       "step": "understand",
@@ -520,7 +520,7 @@
           }
         }
       },
-      "ms": 2
+      "ms": 3
     },
     {
       "step": "call",
@@ -528,6 +528,16 @@
       "status": "ok",
       "detail": {
         "source": "前置工具"
+      },
+      "ms": 0
+    },
+    {
+      "step": "reply",
+      "name": "情绪安抚",
+      "status": "ok",
+      "detail": {
+        "source": "模型",
+        "emotion": "愤怒"
       },
       "ms": 0
     },
@@ -557,7 +567,7 @@
       "status": "ok",
       "detail": {
         "reason": "客户要求转人工",
-        "package": "ART-7019d85d"
+        "package": "ART-f74cf0af"
       },
       "ms": 0
     }

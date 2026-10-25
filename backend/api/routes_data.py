@@ -53,8 +53,12 @@ def get_customer(customer_id: str, request: Request) -> CustomerDetail:
             willingness = None
         row = agent.conn.execute("SELECT session_id FROM sessions WHERE customer_id=? AND ended_at IS NULL "
                                  "ORDER BY started_at DESC LIMIT 1", (customer_id,)).fetchone()
-    return CustomerDetail(**masked(profile.model_dump()), overdues=overdues, willingness=willingness,
-                          open_session_id=row["session_id"] if row else None)
+    return CustomerDetail(**masked({
+        **profile.model_dump(),
+        "overdues": overdues.model_dump(),
+        "willingness": willingness.model_dump(mode="json") if willingness else None,
+        "open_session_id": row["session_id"] if row else None,
+    }))
 
 
 def _resumable(agent, row) -> bool:

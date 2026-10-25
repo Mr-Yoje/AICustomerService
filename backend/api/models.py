@@ -4,32 +4,25 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from cagent.desensitize import display_mask
-from cagent.loans import LoanPriority
+from cagent.desensitize import present
 from cagent.scoring import Willingness
 
 
 def masked(value: Any) -> Any:
-    if isinstance(value, str):
-        return display_mask(value)
-    if isinstance(value, dict):
-        return {k: masked(v) for k, v in value.items()}
-    if isinstance(value, list):
-        return [masked(v) for v in value]
-    return value
+    return present(value)
 
 
 class CustomerBrief(BaseModel):
     customer_id: str
     customer_name: str | None
-    age: int | None
+    age: int | str | None
     occupation: str | None
     region: str | None
     customer_level: str | None
-    credit_score: int | None
-    monthly_income: float | None
+    credit_score: int | str | None
+    monthly_income: float | str | None
     overdue_count: int
-    overdue_amount: float
+    overdue_amount: float | str
 
 
 class CustomerDetail(BaseModel):
@@ -39,7 +32,7 @@ class CustomerDetail(BaseModel):
     emotions: list[dict[str, Any]]
     repayments: list[dict[str, Any]]
     memory: dict[str, Any]
-    overdues: LoanPriority
+    overdues: dict[str, Any]
     willingness: Willingness | None
     open_session_id: str | None
 

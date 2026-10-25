@@ -82,11 +82,14 @@ def test_postcall_single_failure_isolated(db_path, monkeypatch):
     def boom(ctx):
         raise RuntimeError("模拟失败")
 
+    slept = []
+    monkeypatch.setattr(postcall.time, "sleep", lambda seconds: slept.append(seconds))
     monkeypatch.setitem(postcall.TASKS, "write_emotion", boom)
     runner = PostCallRunner(db_path, settings.CONFIG_DIR, max_retries=1)
     runner.enqueue(sid, sync=True)
     status = {t["name"]: t for t in runner.status(sid)}
     assert status["write_emotion"]["status"] == "失败" and status["write_emotion"]["attempts"] == 2
+    assert slept == [0.2]
     assert status["write_call_record"]["status"] == "完成" and status["create_todos"]["status"] == "完成"
     conn = db.connect(db_path)
     cases = CaseStore(conn)

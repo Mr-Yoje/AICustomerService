@@ -57,7 +57,7 @@ class TraceEvent:
 
 class Trace:
     def __init__(self, sink: Callable[[TraceEvent], None] | None = None, trace_id: str | None = None):
-        self.trace_id = trace_id or "TR-" + uuid.uuid4().hex[:10]
+        self.trace_id = trace_id or current_trace_id() or new_trace_id()
         self.events: list[TraceEvent] = []
         self._sink = sink
 

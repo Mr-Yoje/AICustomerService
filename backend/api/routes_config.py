@@ -144,6 +144,8 @@ def save_config(kind: str, key: str, body: SaveIn, request: Request) -> ConfigDo
         _doc(svc.agent.cc, _kind(kind), key)
         if kind == "business_pack":
             return _save_pack(svc, key, body.content)
+        if kind == "registry":
+            _reject(validate_registry(body.content, _registry_known(svc.agent)))
         version = svc.agent.cc.save(kind, key, body.content)
         svc.agent.reload()
         return ConfigDoc(kind=kind, key=key, version=version, content=body.content)

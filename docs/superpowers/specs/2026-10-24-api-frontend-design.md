@@ -58,7 +58,7 @@
 | 配置 | `GET /api/config`（各配置当前版本，含业务包列表）；`GET /api/config/{kind}/{key}`；`PUT /api/config/{kind}/{key}`（业务包先校验，不通过返回 422 及错误清单）；`GET /api/config/{kind}/{key}/versions`；`POST /api/config/business_pack/{key}/copy`（入参新业务包编号与名称）；`GET /api/registry`（分组 `main`、`ops`、`collection:{业务包编号}`，分开列出工具和 Skill） |
 | 规则与模板 | `GET /api/rules`、`PUT /api/rules/{rule_id}`、`POST /api/rules`；`GET /api/templates`、`PUT /api/templates/{template_id}`、`POST /api/templates`。同一编号读取时优先用系统生成的覆盖行。保存不改原始导入行，也不改赛题 CSV。规则级别只能是轻微、中等、严重。校验失败返回 422 及错误清单；编号已存在时新增返回 409 |
 
-接口返回的客户姓名、证件号、手机号均经显示脱敏。
+接口返回的客户姓名、证件号、手机号均经显示脱敏。客户列表和档案里的月收入、欠款、逾期金额返回 `**`，实时轨迹事件里的金额数值同样写成 `**`。发给客户的话术正文仍保留金额。请求体超过 `config/limits.yaml` 的 `max_request_bytes` 时返回 413。服务默认监听 127.0.0.1。
 
 ## 4. 前端页面
 

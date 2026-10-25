@@ -63,7 +63,7 @@ python scripts/init_db.py --reset
 只启动后端、不打包前端时，在 `backend` 目录执行：
 
 ```powershell
-python scripts/serve.py --host 0.0.0.0 --port 8000
+python scripts/serve.py --port 8000
 python scripts/serve.py --port 8000 --offline
 python scripts/serve.py --port 8000 --web-dist D:\path\to\AICustomerService-web\dist
 ```

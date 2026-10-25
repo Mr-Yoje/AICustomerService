@@ -9,6 +9,19 @@ def count(conn, table, where="1=1"):
     return conn.execute(f'SELECT COUNT(*) FROM "{table}" WHERE {where}').fetchone()[0]
 
 
+def test_damaged_table_and_workbook_are_rejected(db_conn, tmp_path):
+    from cagent.io_guard import DamagedFile, read_csv_dicts
+
+    broken = tmp_path / "dim_customer.csv"
+    broken.write_bytes(b"\x00\x01not a table")
+    with pytest.raises(DamagedFile):
+        read_csv_dicts(broken)
+    workbook = tmp_path / "bad.xlsx"
+    workbook.write_bytes(b"this is not a workbook")
+    with pytest.raises(DamagedFile):
+        importer.append_private(db_conn, workbook)
+
+
 def test_import_counts(db_conn):
     assert count(db_conn, "dim_customer") == 10
     assert count(db_conn, "dim_loan") == 30

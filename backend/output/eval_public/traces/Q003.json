@@ -1,10 +1,10 @@
 {
-  "session_id": "S-3a7ded3e",
+  "session_id": "S-3b85a11c",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "情绪感知+分期方案协商",
-  "reply": "理解您现在的压力，欠款一次性还不上确实让人焦虑，您的反馈我已记录。目前可以协商分期：标准分期12期，月供**元，年化利率7.20%，手续费**元，总成本**元；也可申请一次性结清减免违约金，需审批，不承诺结果。逾期已120天，继续增加会影响信用。您每月可承受金额大概多少？我帮您生成协商记录。",
+  "reply": "理解您现在的压力，欠款一次性还确实不容易。可以分期，您每月大概能承受多少？我按这个帮您看方案。目前有一笔标准分期：12期，月供**元，年化利率7.20%，手续费**元，总成本**元；也可申请一次性结清减免违约金，需审批，不承诺结果。确认后我会生成协商记录。",
   "usage": null,
   "customer_id": "C**03",
   "hit_rules": [],
@@ -40,7 +40,7 @@
     "还款意愿：51分（中，置信度0.85）",
     "建议策略：提交结清减免申请"
   ],
-  "trace_id": "TR-d6e9f48d6f",
+  "trace_id": "TR-85453c4c48",
   "trace": [
     {
       "step": "route",
@@ -60,7 +60,7 @@
       "detail": {
         "loan_type": "车贷",
         "pack": "auto_loan",
-        "version": "eda30fce7f"
+        "version": "32d2be07a6"
       },
       "ms": 0
     },
@@ -164,31 +164,31 @@
           "repayments": [
             {
               "repay_id": "RP0005",
-              "repay_amount": 500.0,
+              "repay_amount": "**",
               "repay_time": "2024-12-10",
               "is_on_time": "否"
             },
             {
               "repay_id": "RP0021",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-05-27",
               "is_on_time": "否"
             },
             {
               "repay_id": "RP0008",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-02-20",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0019",
-              "repay_amount": 1500.0,
+              "repay_amount": "**",
               "repay_time": "2024-02-10",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0028",
-              "repay_amount": 1500.0,
+              "repay_amount": "**",
               "repay_time": "2024-01-02",
               "is_on_time": "是"
             }
@@ -216,7 +216,7 @@
               "overdue_id": "O0038",
               "loan_id": "L0024",
               "loan_type": "车贷",
-              "overdue_amount": 20000.0,
+              "overdue_amount": "**",
               "overdue_days": 120,
               "overdue_periods": 6,
               "last_repay_date": "2025-05-25",
@@ -224,7 +224,7 @@
               "owner_conflict": true
             }
           ],
-          "total_amount": 20000.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 O0038（车贷，逾期120天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": [
@@ -363,7 +363,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "auto_loan",
-        "session_id": "S-3a7ded3e"
+        "session_id": "S-3b85a11c"
       },
       "ms": 0
     },
@@ -397,7 +397,7 @@
           "next_node": null
         }
       },
-      "ms": 720
+      "ms": 742
     },
     {
       "step": "understand",
@@ -448,7 +448,7 @@
         },
         "output": {
           "customer_id": "C**03",
-          "principal": 20000.0,
+          "principal": "**",
           "overdue_ids": [
             "O0038"
           ],
@@ -467,10 +467,10 @@
               "periods": 12,
               "annual_rate": 0.072,
               "fee_rate": 0.015,
-              "principal": 20000.0,
-              "monthly_payment": 1732.38,
-              "fee": 300.0,
-              "total_cost": 21088.55,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -481,10 +481,10 @@
               "periods": 1,
               "annual_rate": 0.0,
               "fee_rate": 0.0,
-              "principal": 20000.0,
-              "monthly_payment": 20000.0,
-              "fee": 0.0,
-              "total_cost": 20000.0,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": true,
               "affordable": false,
               "note": "一次性结清可申请减免违约金，需审批，不承诺结果"
@@ -549,9 +549,7 @@
                   "说明": "一次性结清可申请减免违约金，需审批，不承诺结果"
                 }
               ],
-              "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取",
-              "还款意愿": "51分（中，置信度0.85）",
-              "还款意愿等级": "中"
+              "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取"
             },
             "对话摘要": "",
             "最近对话": []
@@ -559,11 +557,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "理解您现在的压力，欠款一次性还不上确实让人焦虑，您的反馈我已记录。目前可以协商分期：标准分期12期，月供**元，年化利率7.20%，手续费**元，总成本**元；也可申请一次性结清减免违约金，需审批，不承诺结果。逾期已120天，继续增加会影响信用。您每月可承受金额大概多少？我帮您生成协商记录。",
+          "reply": "理解您现在的压力，欠款一次性还确实不容易。可以分期，您每月大概能承受多少？我按这个帮您看方案。目前有一笔标准分期：12期，月供**元，年化利率7.20%，手续费**元，总成本**元；也可申请一次性结清减免违约金，需审批，不承诺结果。确认后我会生成协商记录。",
           "source": "大模型"
         }
       },
-      "ms": 1617
+      "ms": 1060
     },
     {
       "step": "guard",

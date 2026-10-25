@@ -1,0 +1,7 @@
+# 单会话终止与资源上限。达到任一项即停止继续调用工具或大模型。
+max_turns: 12
+max_steps: 8
+token_budget: 12000
+max_request_bytes: 32768
+allowed_base_urls:
+  - https://api.deepseek.com

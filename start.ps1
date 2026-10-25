@@ -1,9 +1,10 @@
 # 一键启动：如同级目录存在前端仓库则先打包，再启动后端。
-# 监听 0.0.0.0，本机用 http://127.0.0.1:<端口>，同一 WiFi 用本机局域网地址。
+# 默认只监听 127.0.0.1。需要同一 WiFi 访问时加 -Lan。
 param(
     [int]$Port = 8000,
     [switch]$Offline,
-    [switch]$SkipWebBuild
+    [switch]$SkipWebBuild,
+    [switch]$Lan
 )
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -24,7 +25,7 @@ Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
     ForEach-Object { Write-Host "局域网访问： http://$($_.IPAddress):$Port  ($($_.InterfaceAlias))" }
 
 Push-Location (Join-Path $root "backend")
-$serveArgs = @("scripts/serve.py", "--host", "0.0.0.0", "--port", $Port)
+$serveArgs = @("scripts/serve.py", "--host", $(if ($Lan) { "0.0.0.0" } else { "127.0.0.1" }), "--port", $Port)
 if ($Offline) { $serveArgs += "--offline" }
 python @serveArgs
 Pop-Location

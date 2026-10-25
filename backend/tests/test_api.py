@@ -119,6 +119,9 @@ def test_customers_list_and_detail_masked(client):
     assert rows and all("*" in (r["customer_name"] or "*") for r in rows)
     detail = client.get("/api/customers/C0001").json()
     assert detail["overdues"]["items"] and detail["willingness"]["score"] >= 0
+    assert detail["overdues"]["items"][0]["overdue_amount"] == "**"
+    assert detail["overdues"]["total_amount"] == "**"
+    assert rows[0]["overdue_amount"] == "**" or rows[0]["overdue_count"] == 0
     assert "*" in detail["profile"]["customer_name"] and detail["open_session_id"] is None
     assert client.get("/api/customers/C9999").status_code == 404
 

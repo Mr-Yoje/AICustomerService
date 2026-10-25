@@ -86,7 +86,12 @@ class CaseStore:
     def messages(self, session_id: str) -> list[dict]:
         rows = self.conn.execute("SELECT turn, role, text, meta, created_at FROM messages WHERE session_id=? ORDER BY turn",
                                  (session_id,))
-        return [{**dict(r), "meta": json.loads(r["meta"] or "{}")} for r in rows]
+        parsed = [{**dict(r), "meta": json.loads(r["meta"] or "{}")} for r in rows]
+        ordered = sorted(parsed, key=lambda m: (m["created_at"] or "", m["turn"]))
+        if [m["turn"] for m in ordered] != [m["turn"] for m in parsed]:
+            for m in ordered:
+                m["meta"]["乱序已重排"] = True
+        return ordered
 
     def context(self, session_id: str, keep_last: int = 6) -> dict:
         msgs = self.messages(session_id)

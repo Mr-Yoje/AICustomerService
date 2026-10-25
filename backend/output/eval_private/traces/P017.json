@@ -1,10 +1,10 @@
 {
-  "session_id": "S-4d797de5",
+  "session_id": "S-06e07379",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "还款意愿评估",
-  "reply": "理解您现在的压力，您说的三千元先还、剩余下月再处理的想法我记下了。宽限申请已记录，但需以审批为准。您预计哪天发工资？另外可参考标准分期：6期月供**元，年化5.40%，手续费**元；或6期月供**元，年化7.20%，手续费**元。逾期88天，天数继续增加会影响信用，方便了解一下吗？",
+  "reply": "理解您现在资金紧张，先还三千元可以先记录，剩余部分下个月再安排。宽限申请已记录。您可考虑标准分期6期，月供**元，年化利率5.40%，手续费**元，总成本**元；逾期天数继续增加会影响信用。您看是否方便了解？",
   "usage": null,
   "customer_id": "C**24",
   "hit_rules": [],
@@ -37,7 +37,7 @@
     "还款意愿：71分（高，置信度1.0）",
     "建议策略：协商分期"
   ],
-  "trace_id": "TR-b18162be18",
+  "trace_id": "TR-77c427a059",
   "trace": [
     {
       "step": "route",
@@ -57,7 +57,7 @@
       "detail": {
         "loan_type": "装修贷",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },
@@ -147,25 +147,25 @@
           "repayments": [
             {
               "repay_id": "RP0056",
-              "repay_amount": 1500.0,
+              "repay_amount": "**",
               "repay_time": "2025-10-12",
               "is_on_time": "否"
             },
             {
               "repay_id": "RP0055",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2025-06-15",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0054",
-              "repay_amount": 2500.0,
+              "repay_amount": "**",
               "repay_time": "2024-07-16",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0053",
-              "repay_amount": 3000.0,
+              "repay_amount": "**",
               "repay_time": "2024-03-21",
               "is_on_time": "是"
             }
@@ -193,7 +193,7 @@
               "overdue_id": "O0053",
               "loan_id": "L0037",
               "loan_type": "装修贷",
-              "overdue_amount": 9000.0,
+              "overdue_amount": "**",
               "overdue_days": 88,
               "overdue_periods": 4,
               "last_repay_date": "2025-07-24",
@@ -204,7 +204,7 @@
               "overdue_id": "O0055",
               "loan_id": "L0038",
               "loan_type": "信用卡分期",
-              "overdue_amount": 3500.0,
+              "overdue_amount": "**",
               "overdue_days": 55,
               "overdue_periods": 2,
               "last_repay_date": "2025-08-26",
@@ -215,7 +215,7 @@
               "overdue_id": "O0054",
               "loan_id": "L0037",
               "loan_type": "装修贷",
-              "overdue_amount": 2000.0,
+              "overdue_amount": "**",
               "overdue_days": 25,
               "overdue_periods": 1,
               "last_repay_date": "2025-07-24",
@@ -226,7 +226,7 @@
               "overdue_id": "O0056",
               "loan_id": "L0038",
               "loan_type": "信用卡分期",
-              "overdue_amount": 500.0,
+              "overdue_amount": "**",
               "overdue_days": 9,
               "overdue_periods": 1,
               "last_repay_date": "2025-08-26",
@@ -234,7 +234,7 @@
               "owner_conflict": false
             }
           ],
-          "total_amount": 15000.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 O0053（装修贷，逾期88天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": []
@@ -370,7 +370,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-4d797de5"
+        "session_id": "S-06e07379"
       },
       "ms": 0
     },
@@ -393,7 +393,7 @@
           "customer_intent": "要求宽限",
           "emotion": "焦虑",
           "emotion_intensity": 0.6,
-          "amount": 3000.0,
+          "amount": "**",
           "periods": null,
           "date": "下个月",
           "monthly_affordable": 3000.0,
@@ -404,7 +404,7 @@
           "next_node": null
         }
       },
-      "ms": 960
+      "ms": 973
     },
     {
       "step": "understand",
@@ -479,7 +479,7 @@
         },
         "output": {
           "customer_id": "C**24",
-          "principal": 15000.0,
+          "principal": "**",
           "overdue_ids": [
             "O0053",
             "O0054",
@@ -502,10 +502,10 @@
               "periods": 6,
               "annual_rate": 0.054,
               "fee_rate": 0.01,
-              "principal": 15000.0,
-              "monthly_payment": 2539.52,
-              "fee": 150.0,
-              "total_cost": 15387.13,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -516,10 +516,10 @@
               "periods": 6,
               "annual_rate": 0.072,
               "fee_rate": 0.015,
-              "principal": 15000.0,
-              "monthly_payment": 2552.76,
-              "fee": 225.0,
-              "total_cost": 15541.57,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -530,10 +530,10 @@
               "periods": 1,
               "annual_rate": 0.0,
               "fee_rate": 0.0,
-              "principal": 15000.0,
-              "monthly_payment": 15000.0,
-              "fee": 0.0,
-              "total_cost": 15000.0,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": true,
               "affordable": false,
               "note": "一次性结清可申请减免违约金，需审批，不承诺结果"
@@ -608,8 +608,6 @@
               ],
               "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取",
               "宽限请求": "已记录",
-              "还款意愿": "71分（高，置信度1.0）",
-              "还款意愿等级": "高",
               "可承受金额": "**元",
               "还款时间": "下个月"
             },
@@ -619,11 +617,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "理解您现在的压力，您说的三千元先还、剩余下月再处理的想法我记下了。宽限申请已记录，但需以审批为准。您预计哪天发工资？另外可参考标准分期：6期月供**元，年化5.40%，手续费**元；或6期月供**元，年化7.20%，手续费**元。逾期88天，天数继续增加会影响信用，方便了解一下吗？",
+          "reply": "理解您现在资金紧张，先还三千元可以先记录，剩余部分下个月再安排。宽限申请已记录。您可考虑标准分期6期，月供**元，年化利率5.40%，手续费**元，总成本**元；逾期天数继续增加会影响信用。您看是否方便了解？",
           "source": "大模型"
         }
       },
-      "ms": 1288
+      "ms": 1311
     },
     {
       "step": "guard",

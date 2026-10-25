@@ -87,28 +87,44 @@ def test_multi_loan_priority(db_conn):
     assert "优先" in (out.strategy or "")
 
 
-def test_complaint_handoff_starts_with_apology(db_conn):
+def test_handoff_soothing_uses_context_and_drops_promises(db_conn):
+    seen = {}
+
     def responder(system, user):
         purpose = system.splitlines()[0].removeprefix("任务代号：")
         if purpose == "understand":
-            return {"customer_intent": "投诉", "emotion": "愤怒", "emotion_intensity": 0.9, "confidence": 0.9}
+            return {"customer_intent": "投诉", "emotion": "愤怒", "emotion_intensity": 0.95, "confidence": 0.9}
+        if purpose == "soothe":
+            seen["system"] = system
+            seen["user"] = user
+            if "第二次" in user:
+                return {"reply": "后续会控制联系频次，账单改到您方便的时间。"}
+            return {"reply": "听得出您现在很生气，这让人难受。"}
         return {"hits": []}
 
-    out = make_agent(db_conn, llm_client=FakeLLM(responder)).handle(
-        "我已经打12378投诉你们了，一天打我四次电话，你们就等着挨罚吧！", NOW, Trace())
-    assert out.handoff and out.reply.startswith("非常抱歉") and "转接人工" in out.reply
+    text = "我已经打12378投诉你们了，一天打我四次电话，你们就等着挨罚吧！"
+    agent = make_agent(db_conn, llm_client=FakeLLM(responder))
+    out = agent.handle(text, NOW, Trace())
+    assert out.handoff and out.reply.startswith("听得出您现在很生气") and "转接人工" in out.reply
+    assert "控制联系频次" not in out.reply
+    assert "愤怒" in seen["user"] and "一天打我四次" in seen["user"]
+    assert "禁止任何承诺" in seen["system"]
+    again = agent.handle("第二次还是很生气，别再打了", NOW, Trace())
+    assert again.handoff and "控制联系频次" not in again.reply and "方便的时间" not in again.reply
+    assert again.reply.startswith("我理解您现在的感受。")
 
 
 def test_emotion_and_stop_contact_hands_off(db_conn):
     out = make_agent(db_conn).handle("我没钱！别再打了！再打我报警！", NOW, Trace())
     assert out.system_intent == "情绪感知+人工接管" and out.handoff
-    assert "控制联系频次" in out.reply and "转接人工" in out.reply
+    assert out.reply.startswith("我理解您现在的感受。") and "转接人工" in out.reply
+    assert "控制联系频次" not in out.reply and "方便的时间" not in out.reply
 
 
 def test_anxious_installment_is_combo(db_conn):
     out = make_agent(db_conn).handle("我最近失业了真的很焦虑，能不能想办法帮我分期？", NOW, Trace())
     assert out.system_intent == "情绪感知+分期方案协商" and not out.handoff and out.plan
-    assert "分期" in out.reply and "联系频次" in out.reply
+    assert "分期" in out.reply and "联系频次" not in out.reply
 
 
 def test_plain_installment_stays_single_intent(db_conn):
@@ -190,7 +206,31 @@ def test_first_turn_uses_prepared_willingness(db_conn):
     agent.registry.call = wrapped
     out = agent.handle("你好", NOW, Trace())
     assert out.willingness.score == 42 and "willingness_update" not in called
-    assert "42分" in str(agent._facts(None, None, out.willingness)["还款意愿"])
+    assert "42" not in str(agent._facts(None, None, out.willingness))
+    assert "不要评价客户" in agent._reply_system("询问还款安排")
+
+
+def test_turn_cap_ends_without_another_reply_cycle(db_conn, monkeypatch):
+    monkeypatch.setattr("cagent.agents.collection.load_limits", lambda: {
+        "max_turns": 1, "max_steps": 8, "token_budget": 12000,
+        "max_request_bytes": 32768, "allowed_base_urls": ["https://api.deepseek.com"],
+    })
+    agent = make_agent(db_conn)
+    agent.cases.add_message(agent.session_id, "客户", "先还一笔", {}, NOW)
+    out = agent.handle("再商量一下", NOW, Trace())
+    assert out.end_reason == "达到轮次上限"
+    assert "轮次上限" in out.reply
+
+
+def test_step_cap_skips_extra_actions(db_conn, monkeypatch):
+    monkeypatch.setattr("cagent.agents.collection.load_limits", lambda: {
+        "max_turns": 12, "max_steps": 0, "token_budget": 12000,
+        "max_request_bytes": 32768, "allowed_base_urls": ["https://api.deepseek.com"],
+    })
+    agent = make_agent(db_conn)
+    trace = Trace()
+    agent.handle("能不能分12期", NOW, trace)
+    assert "installment_plan" not in [e.name for e in trace.events]
 
 
 def test_reply_timeout_is_told_to_customer(db_conn):

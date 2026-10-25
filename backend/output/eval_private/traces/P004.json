@@ -1,10 +1,10 @@
 {
-  "session_id": "S-f7b22fc2",
+  "session_id": "S-db4ba0c7",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "分期方案协商",
-  "reply": "您好，我是通用消费金融AI坐席AI01。理解您想分期，也关心手续费问题。手续费按欠款金额一次性收取，减免需提交申请、以审批为准，我无法直接承诺。为您推荐标准分期12期：方案一年化5.40%，月供**元，手续费**元，总成本**元；方案二年化7.20%，月供**元，手续费**元，总成本**元。您看哪个方案更合适？",
+  "reply": "您问的2万分12期，按标准分期方案，月供为**元，年化利率5.40%，手续费**元一次性收取，总成本**元；另有月供**元、年化7.20%、手续费**元、总成本**元的方案。手续费减免我无法直接承诺，可先为您提交申请，以审批为准。您看哪个方案更合适？",
   "usage": null,
   "customer_id": "C**14",
   "hit_rules": [],
@@ -41,7 +41,7 @@
     "还款意愿：43分（中，置信度0.85）",
     "建议策略：协商分期"
   ],
-  "trace_id": "TR-1138e544a6",
+  "trace_id": "TR-016b5ab043",
   "trace": [
     {
       "step": "route",
@@ -61,7 +61,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },
@@ -137,13 +137,13 @@
           "repayments": [
             {
               "repay_id": "P-RP0019",
-              "repay_amount": 5000.0,
+              "repay_amount": "**",
               "repay_time": "2024-05-25",
               "is_on_time": "是"
             },
             {
               "repay_id": "P-RP0040",
-              "repay_amount": 500.0,
+              "repay_amount": "**",
               "repay_time": "2024-04-26",
               "is_on_time": "否"
             }
@@ -171,7 +171,7 @@
               "overdue_id": "P-O0032",
               "loan_id": "P-L0001",
               "loan_type": "信用卡分期",
-              "overdue_amount": 5000.0,
+              "overdue_amount": "**",
               "overdue_days": 90,
               "overdue_periods": 3,
               "last_repay_date": "2025-04-15",
@@ -182,7 +182,7 @@
               "overdue_id": "P-O0022",
               "loan_id": "P-L0002",
               "loan_type": "信用卡分期",
-              "overdue_amount": 1000.0,
+              "overdue_amount": "**",
               "overdue_days": 90,
               "overdue_periods": 1,
               "last_repay_date": "2025-06-23",
@@ -193,7 +193,7 @@
               "overdue_id": "P-O0040",
               "loan_id": "P-L0023",
               "loan_type": "教育贷",
-              "overdue_amount": 20000.0,
+              "overdue_amount": "**",
               "overdue_days": 7,
               "overdue_periods": 4,
               "last_repay_date": "2025-09-15",
@@ -204,7 +204,7 @@
               "overdue_id": "P-O0013",
               "loan_id": "P-L0014",
               "loan_type": "现金贷",
-              "overdue_amount": 20000.0,
+              "overdue_amount": "**",
               "overdue_days": 3,
               "overdue_periods": 5,
               "last_repay_date": "2025-03-17",
@@ -212,7 +212,7 @@
               "owner_conflict": true
             }
           ],
-          "total_amount": 46000.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 P-O0032（信用卡分期，逾期90天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": [
@@ -353,7 +353,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-f7b22fc2"
+        "session_id": "S-db4ba0c7"
       },
       "ms": 0
     },
@@ -376,7 +376,7 @@
           "customer_intent": "要求分期",
           "emotion": "平静",
           "emotion_intensity": 0.3,
-          "amount": 20000.0,
+          "amount": "**",
           "periods": 12,
           "date": null,
           "monthly_affordable": null,
@@ -387,7 +387,7 @@
           "next_node": null
         }
       },
-      "ms": 702
+      "ms": 1107
     },
     {
       "step": "understand",
@@ -438,7 +438,7 @@
         },
         "output": {
           "customer_id": "C**14",
-          "principal": 46000.0,
+          "principal": "**",
           "overdue_ids": [
             "P-O0013",
             "P-O0022",
@@ -461,10 +461,10 @@
               "periods": 12,
               "annual_rate": 0.054,
               "fee_rate": 0.01,
-              "principal": 46000.0,
-              "monthly_payment": 3946.38,
-              "fee": 460.0,
-              "total_cost": 47816.57,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -475,10 +475,10 @@
               "periods": 12,
               "annual_rate": 0.072,
               "fee_rate": 0.015,
-              "principal": 46000.0,
-              "monthly_payment": 3984.47,
-              "fee": 690.0,
-              "total_cost": 48503.67,
+              "principal": "**",
+              "monthly_payment": "**",
+              "fee": "**",
+              "total_cost": "**",
               "lump_sum": false,
               "affordable": true,
               "note": ""
@@ -544,9 +544,7 @@
                   "说明": ""
                 }
               ],
-              "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取",
-              "还款意愿": "43分（中，置信度0.85）",
-              "还款意愿等级": "中"
+              "方案口径": "利率按年化计算，月供按等额本息；手续费按欠款金额一次性收取"
             },
             "对话摘要": "",
             "最近对话": []
@@ -554,11 +552,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "您好，我是通用消费金融AI坐席AI01。理解您想分期，也关心手续费问题。手续费按欠款金额一次性收取，减免需提交申请、以审批为准，我无法直接承诺。为您推荐标准分期12期：方案一年化5.40%，月供**元，手续费**元，总成本**元；方案二年化7.20%，月供**元，手续费**元，总成本**元。您看哪个方案更合适？",
+          "reply": "您问的2万分12期，按标准分期方案，月供为**元，年化利率5.40%，手续费**元一次性收取，总成本**元；另有月供**元、年化7.20%、手续费**元、总成本**元的方案。手续费减免我无法直接承诺，可先为您提交申请，以审批为准。您看哪个方案更合适？",
           "source": "大模型"
         }
       },
-      "ms": 1338
+      "ms": 1010
     },
     {
       "step": "guard",

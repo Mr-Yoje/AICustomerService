@@ -109,6 +109,7 @@ class MainAgent:
         if ops is not None:
             ops.engine, ops.policy, ops.intents = self.engine, self.policy, self.intents
             ops.main_cfg, ops.cp_version, ops.llm = self.main_cfg, self.cp_version, self.llm
+            ops.registry.apply(ops._registry_items())
 
     def _latest_round(self, session_id: str | None) -> list[dict] | None:
         if not session_id or self.cases.get_session(session_id) is None:

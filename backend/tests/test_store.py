@@ -50,6 +50,17 @@ def test_case_session_messages_and_context(db_conn):
         cs.update_session(sid, customer_id="C0002")
 
 
+def test_out_of_order_messages_follow_time(db_conn):
+    cs = CaseStore(db_conn)
+    case_id = cs.create_case("C0001", "consumer_finance", NOW)
+    sid = cs.open_session(case_id, "C0001", "催收对话模式", "consumer_finance", "v1", "外呼", NOW)
+    cs.add_message(sid, "客户", "后写入", {}, datetime(2026, 10, 24, 11, 0))
+    cs.add_message(sid, "AI坐席", "时间更早", {}, datetime(2026, 10, 24, 10, 0))
+    msgs = cs.messages(sid)
+    assert [m["text"] for m in msgs] == ["时间更早", "后写入"]
+    assert msgs[0]["meta"]["乱序已重排"] is True
+
+
 def test_case_status_artifacts_todos_archive(db_conn):
     cs = CaseStore(db_conn)
     case_id = cs.create_case("C0002", "consumer_finance", NOW)

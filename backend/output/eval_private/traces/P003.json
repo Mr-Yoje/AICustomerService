@@ -4,7 +4,7 @@
   "speaker": "agent",
   "speaker_method": "大模型",
   "system_intent": "合规检测",
-  "reply": "[合规拦截] 命中 R001（辱骂，严重）：话术中不得含有辱骂性词汇；证据「老赖」；处置：人工接管\n建议改写：您好，您的借款已逾期，请尽快安排还款，以免影响个人征信。",
+  "reply": "[合规拦截] 命中 R001（辱骂，严重）：话术中不得含有辱骂性词汇；证据「老赖」；处置：人工接管\n建议改写：您好，您的还款事项尚未处理，请及时关注并尽快安排还款，以免影响个人征信。",
   "usage": null,
   "customer_id": "C**13",
   "hit_rules": [
@@ -43,7 +43,7 @@
   "needs_review": false,
   "review_reasons": [],
   "key_points": [],
-  "trace_id": "TR-4211a125f8",
+  "trace_id": "TR-08bf637434",
   "trace": [
     {
       "step": "route",
@@ -63,7 +63,7 @@
       "detail": {
         "loan_type": "教育贷",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },

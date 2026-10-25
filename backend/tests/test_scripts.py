@@ -1,4 +1,6 @@
 import csv
+import json
+import re
 from datetime import datetime
 
 from cagent import db, settings
@@ -46,6 +48,13 @@ def test_run_eval_offline(db_conn, db_path, tmp_path):
     for p in ("results.csv", "traces/T1.json", "audit_log.csv"):
         assert (out / p).exists()
     assert list((out / "reports").glob("*.md"))
+    assert re.search(r"\d+(?:\.\d+)?元", rows[0]["reply"])
+    assert "**元" not in rows[0]["reply"]
+    trace = json.loads((out / "traces" / "T1.json").read_text(encoding="utf-8"))
+    assert not re.search(r"\d+(?:\.\d+)?元", trace["reply"])
+    dumped = json.dumps(trace, ensure_ascii=False)
+    for key in ("overdue_amount", "total_amount", "principal", "monthly_payment", "fee", "total_cost"):
+        assert not re.search(rf'"{key}": \d', dumped)
 
 
 def test_prepare_suite_separates_public_and_private_data(tmp_path):

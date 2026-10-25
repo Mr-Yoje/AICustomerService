@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 
 from cagent import settings
+from cagent.limits import load_limits
 from cagent.trace import accept_trace_id, pop_trace_id, push_trace_id
 
 from . import routes_chat, routes_config, routes_data
@@ -47,7 +48,20 @@ class TraceMiddleware:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-        raw = dict(scope.get("headers") or []).get(b"x-trace-id", b"").decode("latin-1")
+        headers = dict(scope.get("headers") or [])
+        raw_len = headers.get(b"content-length")
+        if raw_len:
+            try:
+                too_big = int(raw_len) > load_limits()["max_request_bytes"]
+            except ValueError:
+                too_big = False
+            if too_big:
+                body = '{"detail":"请求体超过上限"}'.encode()
+                await send({"type": "http.response.start", "status": 413,
+                            "headers": [(b"content-type", b"application/json")]})
+                await send({"type": "http.response.body", "body": body})
+                return
+        raw = headers.get(b"x-trace-id", b"").decode("latin-1")
         trace_id = accept_trace_id(raw)
         token = push_trace_id(trace_id)
         start = time.perf_counter()

@@ -35,11 +35,11 @@ def run(conn, *, db_path, input_path: Path, output_dir: Path, now: datetime, off
                              customer_id=q.get("customer_id") or None, now=now, interactive=False)
             if t.session_id and t.mode in (MODE_COLLECTION, MODE_HANDOFF):
                 agent.end_collection(t.session_id, now, "测评单题结束")
-            row = {**base, "intent": t.system_intent, "reply": export_mask(t.reply),
-                   "key_points": export_mask("；".join(t.key_points)),
+            row = {**base, "intent": t.system_intent, "reply": t.reply,
+                   "key_points": "；".join(t.key_points),
                    "hit_rules": ",".join(t.hit_rules), "willingness_score": t.willingness_score or "",
                    "strategy": t.strategy or "", "speaker": t.speaker, "needs_review": "是" if t.needs_review else "否",
-                   "review_reasons": export_mask("；".join(t.review_reasons)), "trace_id": t.trace_id}
+                   "review_reasons": "；".join(t.review_reasons), "trace_id": t.trace_id}
             trace = redact(t.model_dump(mode="json"))
         except Exception as e:  # noqa: BLE001 单题异常不能中断整批测评
             row = {**base, "intent": "", "reply": f"[处理异常] {type(e).__name__}: {e}", "key_points": "",
@@ -88,17 +88,10 @@ def prepare(conn, source_path: Path) -> dict:
 
 
 def read_questions(path: Path) -> list[dict]:
-    raw = Path(path).read_bytes()
-    text = None
-    for encoding in ("utf-8-sig", "gb18030"):
-        try:
-            text = raw.decode(encoding)
-            break
-        except UnicodeDecodeError:
-            continue
-    if text is None:
-        text = raw.decode("utf-8-sig")
-    return list(csv.DictReader(text.splitlines()))
+    from cagent.io_guard import read_csv_dicts
+
+    _, rows = read_csv_dicts(Path(path))
+    return rows
 
 
 def suite_layout(name: str) -> dict:

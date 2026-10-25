@@ -6,6 +6,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from . import db
+from .io_guard import DamagedFile, read_csv_dicts
 
 FK_CHECKS = [
     ("fact_overdue", "overdue_id", "customer_id", "dim_customer", "customer_id"),
@@ -37,12 +38,11 @@ def import_all(conn: sqlite3.Connection, data_dir: Path) -> dict:
     for table, cols in db.BUSINESS_TABLES.items():
         db.create_business_table(conn, table)
         path = Path(data_dir) / f"{table}.csv"
-        with path.open(encoding="utf-8-sig", newline="") as f:
-            reader = csv.DictReader(f)
-            missing = [c for c, _ in cols if c not in (reader.fieldnames or [])]
-            if missing:
-                raise ValueError(f"{path.name} 缺少列: {missing}")
-            records = [tuple(_cast(r[c], t) for c, t in cols) + (db.RAW, None, stamp) for r in reader]
+        fieldnames, rows = read_csv_dicts(path)
+        missing = [c for c, _ in cols if c not in fieldnames]
+        if missing:
+            raise ValueError(f"{path.name} 缺少列: {missing}")
+        records = [tuple(_cast(r.get(c), t) for c, t in cols) + (db.RAW, None, stamp) for r in rows]
         names = [c for c, _ in cols] + db.META_COLUMNS
         conn.executemany(
             f"INSERT INTO {db.q(table)} ({', '.join(db.q(n) for n in names)}) VALUES ({', '.join('?' * len(names))})",
@@ -140,7 +140,12 @@ def append_private(conn: sqlite3.Connection, workbook: Path) -> dict:
     """把非公开业务表追加进当前库。客户编号保持原值；主键冲突的本批记录改为 P- 前缀，并改写本批外键。"""
     import openpyxl
 
-    wb = openpyxl.load_workbook(workbook, read_only=True, data_only=True)
+    try:
+        wb = openpyxl.load_workbook(workbook, read_only=True, data_only=True)
+    except DamagedFile:
+        raise
+    except Exception as e:
+        raise DamagedFile(f"{Path(workbook).name} 工作簿损坏，已拒绝导入") from e
     renames: dict[str, dict[str, str]] = {}
     counts: dict[str, int] = {}
     stamp = db.now_iso()

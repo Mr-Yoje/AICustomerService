@@ -1,10 +1,10 @@
 {
-  "session_id": "S-5b13a8ba",
+  "session_id": "S-3467fd87",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "多贷款管理",
-  "reply": "您好，我是AI坐席AI01。理解您着急，先帮您核对：您名下逾期1笔，合计**元元，风险等级高。明细为O0029信用卡分期，逾期365天，欠款**元元。建议优先处理这笔逾期最长的，您是否同意？另外想了解您近期是否有还款安排？",
+  "reply": "您好，我是AI坐席AI01。理解您着急，先帮您核对：您名下逾期1笔，合计**元，风险等级高。明细为：O0029信用卡分期，逾期365天，欠款**元。建议优先处理逾期天数最长的这笔O0029，您是否同意？",
   "usage": null,
   "customer_id": "C**07",
   "hit_rules": [],
@@ -36,11 +36,11 @@
     "客户意图：询问欠款",
     "情绪：焦虑（强度0.50）",
     "建议优先处理 O0029（信用卡分期，逾期365天，欠款**元）",
-    "识别置信度：0.8",
+    "识别置信度：0.85",
     "还款意愿：54分（中，置信度0.85）",
     "建议策略：优先处理逾期最长的一笔"
   ],
-  "trace_id": "TR-1f76008b1d",
+  "trace_id": "TR-582d280f3c",
   "trace": [
     {
       "step": "route",
@@ -60,7 +60,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },
@@ -150,13 +150,13 @@
           "repayments": [
             {
               "repay_id": "RP0012",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-12-09",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0013",
-              "repay_amount": 1000.0,
+              "repay_amount": "**",
               "repay_time": "2024-08-04",
               "is_on_time": "否"
             }
@@ -184,7 +184,7 @@
               "overdue_id": "O0029",
               "loan_id": "L0022",
               "loan_type": "信用卡分期",
-              "overdue_amount": 2000.0,
+              "overdue_amount": "**",
               "overdue_days": 365,
               "overdue_periods": 1,
               "last_repay_date": "2025-05-13",
@@ -192,7 +192,7 @@
               "owner_conflict": true
             }
           ],
-          "total_amount": 2000.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 O0029（信用卡分期，逾期365天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": [
@@ -325,7 +325,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-5b13a8ba"
+        "session_id": "S-3467fd87"
       },
       "ms": 0
     },
@@ -352,14 +352,14 @@
           "periods": null,
           "date": null,
           "monthly_affordable": null,
-          "confidence": 0.8,
+          "confidence": 0.85,
           "conflict": false,
           "method": "大模型",
           "current_node": null,
           "next_node": null
         }
       },
-      "ms": 1148
+      "ms": 862
     },
     {
       "step": "understand",
@@ -369,7 +369,7 @@
         "intent": "询问欠款",
         "emotion": "焦虑",
         "intensity": 0.5,
-        "confidence": 0.8,
+        "confidence": 0.85,
         "method": "大模型"
       },
       "ms": 0
@@ -411,7 +411,7 @@
               "overdue_id": "O0029",
               "loan_id": "L0022",
               "loan_type": "信用卡分期",
-              "overdue_amount": 2000.0,
+              "overdue_amount": "**",
               "overdue_days": 365,
               "overdue_periods": 1,
               "last_repay_date": "2025-05-13",
@@ -419,7 +419,7 @@
               "owner_conflict": true
             }
           ],
-          "total_amount": 2000.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 O0029（信用卡分期，逾期365天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": [
@@ -466,9 +466,7 @@
                 }
               ],
               "优先建议": "建议优先处理 O0029（信用卡分期，逾期365天，欠款**元）",
-              "风险等级": "高",
-              "还款意愿": "54分（中，置信度0.85）",
-              "还款意愿等级": "中"
+              "风险等级": "高"
             },
             "对话摘要": "",
             "最近对话": []
@@ -476,11 +474,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "您好，我是AI坐席AI01。理解您着急，先帮您核对：您名下逾期1笔，合计**元元，风险等级高。明细为O0029信用卡分期，逾期365天，欠款**元元。建议优先处理这笔逾期最长的，您是否同意？另外想了解您近期是否有还款安排？",
+          "reply": "您好，我是AI坐席AI01。理解您着急，先帮您核对：您名下逾期1笔，合计**元，风险等级高。明细为：O0029信用卡分期，逾期365天，欠款**元。建议优先处理逾期天数最长的这笔O0029，您是否同意？",
           "source": "大模型"
         }
       },
-      "ms": 1108
+      "ms": 1140
     },
     {
       "step": "guard",

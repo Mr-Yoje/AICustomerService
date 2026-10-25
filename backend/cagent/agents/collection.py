@@ -11,7 +11,8 @@ from ..cases import CaseStore
 from ..compliance import CheckResult, ComplianceEngine
 from ..desensitize import display_mask
 from ..installment import PlanResult, build_plans, load_templates
-from ..llm import GuardedLLM
+from ..limits import load_limits
+from ..llm import GuardedLLM, LLMError
 from ..loans import LoanPriority, prioritize
 from ..memory import MemoryStore
 from ..registry import CallError, Registry
@@ -26,6 +27,10 @@ _REFUSE = re.compile(r"不还|还不了|没钱|不会还")
 _CONFIRM = re.compile(r"同意|就按|就这个|确认|我会还|马上还|今天还|明天还|这就还|我还")
 _PLAN_ACCEPT = re.compile(r"按.{0,8}期|期.{0,6}还")
 _ASK_AMOUNT = re.compile(r"可承受|还多少|每月[^。]{0,8}多少|一个月能还")
+_SOOTHE_PROMISE = re.compile(
+    r"减免|免息|分期|延期|宽限|停催|少打|不再打|别再打|控制联系|联系频次|降低联系|承诺|保证|审批|批准|转人工|转接|记下|方便的时间"
+)
+SOOTHE_FALLBACK = "我理解您现在的感受。"
 
 
 def _risk_grade(days: int) -> str:
@@ -72,7 +77,7 @@ def format_speech(pack: dict, key: str, **extra) -> str:
     return (templates.get(key) or templates["default"]).format_map(_Safe({**speech_vars(pack), **extra}))
 
 
-def refusal_limit(pack: dict) -> int | None:
+def max_step(pack: dict) -> int | None:
     """业务包 exit.max_refusals。未配置或不是正整数时不因拒绝主动结束。"""
     raw = (pack.get("exit") or {}).get("max_refusals")
     if isinstance(raw, bool) or not isinstance(raw, (int, float)):
@@ -290,16 +295,15 @@ class CollectionAgent:
 
     def _prior_facts(self) -> dict:
         facts = {}
-        remembered = self.memory.get("customer", self.customer_id, "last_willingness")
-        if remembered:
-            facts["上次还款意愿"] = f"{remembered.get('score')}分（{remembered.get('level')}）"
         contact = self.memory.get("customer", self.customer_id, "last_contact")
         if contact:
             facts["上次联系"] = f"{contact.get('time')}，结果{contact.get('result')}"
         promises = self.memory.get("customer", self.customer_id, "open_promises") or []
         if promises:
             last = promises[-1]
-            facts["未结承诺"] = f"{last.get('date') or '近期'}还款{last.get('amount') or ''}"
+            amount = last.get("amount")
+            amount_text = f"{float(amount):.0f}元" if isinstance(amount, (int, float)) else ""
+            facts["未结承诺"] = f"{last.get('date') or '近期'}还款{amount_text}"
         return facts
 
     def opening(self, now: datetime, trace: Trace) -> TurnOutput:
@@ -309,7 +313,21 @@ class CollectionAgent:
         return TurnOutput(reply=reply, customer_intent="其他", system_intent="提醒催收", emotion="平静",
                           emotion_intensity=0.0, stage=self.stage, compliance=checks)
 
+    def _limit_turn(self, text: str, now: datetime, trace: Trace) -> TurnOutput | None:
+        turns = sum(1 for m in self.cases.messages(self.session_id) if m["role"] == "客户")
+        if turns < load_limits()["max_turns"]:
+            return None
+        reply = "本通对话已达到轮次上限，我先为您结束。如需继续，请重新发起催收。"
+        trace.add("route", "达到轮次上限", turns=turns)
+        checks = [self._check(reply, now, trace, semantic=False)]
+        self._log_turn(text, reply, {"issue": "达到轮次上限"}, now)
+        return TurnOutput(reply=reply, customer_intent="其他", system_intent="提醒催收", emotion="平静",
+                          emotion_intensity=0.0, stage=self.stage, compliance=checks, end_reason="达到轮次上限")
+
     def handle(self, text: str, now: datetime, trace: Trace) -> TurnOutput:
+        stopped = self._limit_turn(text, now, trace)
+        if stopped:
+            return stopped
         clean, issue = self.understander.preprocess(text)
         review: list[str] = []
         if issue:
@@ -349,6 +367,10 @@ class CollectionAgent:
             actions.append("installment_plan")
         if combo == COMBO_HANDOFF and "reduce_contact" not in actions:
             actions.append("reduce_contact")
+        step_cap = load_limits()["max_steps"]
+        if len(actions) > step_cap:
+            review.append("本轮动作已达到步数上限")
+            actions = actions[:step_cap]
         trace.add("decide", "阶段与动作", stage=self.stage, actions=actions)
         done: list[str] = []
         plan: PlanResult | None = None
@@ -396,13 +418,13 @@ class CollectionAgent:
             checks = [self._check(reply, now, trace, semantic=False)]
         elif combo == COMBO_HANDOFF:
             handoff_reason = handoff_reason or "客户情绪强烈并要求停止联系或转人工"
-            reply = format_speech(self.pack, "情绪感知") + "\n" + format_speech(self.pack, "handoff")
+            reply = self._soothe(clean, u, trace) + "\n" + format_speech(self.pack, "handoff")
             checks = [self._check(reply, now, trace, semantic=False)]
         elif handoff_reason:
             system_intent = "人工接管"
             reply = format_speech(self.pack, "handoff")
             if u.customer_intent == "投诉":
-                reply = "非常抱歉给您带来困扰。\n" + reply
+                reply = self._soothe(clean, u, trace) + "\n" + reply
             checks = [self._check(reply, now, trace, semantic=False)]
         else:
             reply, checks, forced = self._compose(clean, u, system_intent, facts, now, trace, follow_up=follow_up)
@@ -540,9 +562,6 @@ class CollectionAgent:
         if self.snapshot.contact_count_today:
             f["今日已联系"] = f"{self.snapshot.contact_count_today}次"
         f.update(self._prior_facts())
-        if will:
-            f["还款意愿"] = f"{will.score}分（{will.level}，置信度{will.confidence}）"
-            f["还款意愿等级"] = will.level
         if self._mem("monthly_affordable"):
             f["可承受金额"] = f"{float(self._mem('monthly_affordable')):.0f}元"
         if self._mem("amount_asked"):
@@ -575,7 +594,7 @@ class CollectionAgent:
             self._set("agreed_plan", plan_text or self._mem("offered_plan"), "客户确认方案")
 
     def _refusal_end_reason(self) -> str | None:
-        limit = refusal_limit(self.pack)
+        limit = max_step(self.pack)
         count = self._mem("refusals", 0)
         if limit is not None and count >= limit:
             return f"客户累计明确拒绝{count}次"
@@ -675,8 +694,8 @@ class CollectionAgent:
             "- 提醒催收：先报工号，请客户提供身份证后四位核验身份，核验后再说明逾期并询问还款安排。\n"
             "- 还款意愿评估：先共情，询问预计哪天发工资，说明宽限申请已记录，再用事实中的分期方案推荐，并说明逾期天数继续增加会影响信用，最后问是否方便了解。\n"
             "- 分期方案协商：还没有可承受金额、也没有「已问过金额」时，先说明可以分期，再问一次每月可承受金额，然后推荐事实中的方案，并说明会生成协商记录。已有可承受金额或已问过金额时，不要再问还多少或每月可承受金额，直接推荐事实中的方案；还没有还款时间时只问哪一天还。\n"
-            "- 情绪感知：先道歉并承认频繁来电造成不适，记录反馈，说明会控制联系频次，再约一个方便的沟通时间。这一句不要转人工。\n"
-            "- 合规检测：感谢还款意愿，明确不能承诺减免全部利息或未经审批的减免，说明可先提交申请、以审批为准，并推荐事实中的分期方案。\n"
+            "- 情绪感知：只根据客户原话、当前情绪和已有对话做情绪安抚。不承诺减免、分期、延期、停催、减少联系、改约或任何后续安排，也不转人工。\n"
+            "- 合规检测：先确认客户提出的申请，明确不能承诺减免全部利息或未经审批的减免，说明可先提交申请、以审批为准，并推荐事实中的分期方案。\n"
             "- 人工接管：马上转接人工，说明对话记录和账户信息已同步、无需重复，并给出预计等待秒数。\n"
             "- 多贷款管理：先给出笔数、合计金额和风险等级，再按事实逐笔列出贷款类型、逾期天数和欠款金额，建议优先处理逾期天数最长的一笔，询问是否同意。\n"
             "系统意图含「+」时，按加号两侧的逻辑依次说完。\n"
@@ -690,9 +709,40 @@ class CollectionAgent:
             f"4. 禁用词：{'、'.join(sp.get('forbidden_words', []))}；"
             "5. 尖括号占位符（如 <AMOUNT_1>）原样保留；6. 不超过 220 字，先回应客户，再按上面的逻辑说完；"
             "7. 若有“改写要求”，必须按要求修正；"
-            "8. 事实里已有可承受金额或已问过金额时，禁止再问还多少、每月可承受或每月多少。\n"
+            "8. 事实里已有可承受金额或已问过金额时，禁止再问还多少、每月可承受或每月多少；"
+            "9. 不要评价客户本人，不要点评还款意愿、态度、信用好坏或人品，不要说体现意愿或感谢还款意愿。只确认客户刚说的安排和下一步。\n"
             '输出 json，例如 {"reply": "……"}'
         )
+
+    def _soothe(self, text: str, u: Understanding, trace: Trace) -> str:
+        """按原话、当前情绪和已有对话生成安抚。只回应感受；无模型或生成里出现承诺时用固定兜底。"""
+        if not self.llm.available:
+            trace.add("reply", "情绪安抚", source="兜底")
+            return SOOTHE_FALLBACK
+        ctx = self.cases.context(self.session_id)
+        system = (
+            "根据客户原话、当前情绪和已有对话，用一两句中文做情绪安抚。\n"
+            "只回应感受，不解释账单，不提出下一步。\n"
+            "禁止任何承诺，包括减免、免息、分期、延期、宽限、停催、减少联系、改约时间、审批结果。\n"
+            "不超过 80 字。\n"
+            '输出 json，例如 {"reply": "……"}'
+        )
+        payload = {
+            "客户原话": text, "当前情绪": u.emotion, "情绪强度": u.emotion_intensity,
+            "对话摘要": ctx["summary"], "最近对话": ctx["recent"][-4:],
+        }
+        try:
+            out = self.llm.json("soothe", system, payload,
+                                names=[self.snapshot.profile.get("customer_name") or ""])
+            reply = str(out.get("reply") or "").strip()
+        except LLMError as e:
+            trace.add("reply", "情绪安抚", "warn", reason=str(e))
+            return SOOTHE_FALLBACK
+        if not reply or _SOOTHE_PROMISE.search(reply):
+            trace.add("reply", "情绪安抚", source="兜底", reason="空回复或含承诺")
+            return SOOTHE_FALLBACK
+        trace.add("reply", "情绪安抚", source="模型", emotion=u.emotion)
+        return reply[:80]
 
     def _generate_reply(self, a: ReplyIn) -> ReplyOut:
         p = dict(a.payload)

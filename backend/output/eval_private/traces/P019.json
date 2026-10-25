@@ -1,10 +1,10 @@
 {
-  "session_id": "S-c22b62cc",
+  "session_id": "S-54aba5b2",
   "mode": "催收对话模式",
   "speaker": "customer",
   "speaker_method": "大模型",
   "system_intent": "多贷款管理",
-  "reply": "理解您着急，我帮您理清。您名下共4笔逾期，合计**元，风险等级为高。明细：信用卡分期逾期365天，欠款**元；现金贷逾期240天，欠款**元；消费贷逾期90天，欠款**元；消费贷逾期30天，欠款**元。建议优先处理逾期最长的信用卡分期，您是否同意？",
+  "reply": "理解您着急，我帮您逐笔说明。您名下共4笔逾期，合计**元，风险等级为高。明细：信用卡分期逾期365天，欠款**元；现金贷逾期240天，欠款**元；消费贷逾期90天，欠款**元；消费贷逾期30天，欠款**元。建议优先处理逾期天数最长的信用卡分期这笔，您看是否同意？",
   "usage": null,
   "customer_id": "C**29",
   "hit_rules": [],
@@ -37,7 +37,7 @@
     "还款意愿：50分（中，置信度1.0）",
     "建议策略：优先处理逾期最长的一笔"
   ],
-  "trace_id": "TR-575a7830ee",
+  "trace_id": "TR-d195e7dbf8",
   "trace": [
     {
       "step": "route",
@@ -57,7 +57,7 @@
       "detail": {
         "loan_type": "信用卡分期",
         "pack": "consumer_finance",
-        "version": "eb2f7cba12"
+        "version": "9141281b34"
       },
       "ms": 0
     },
@@ -147,25 +147,25 @@
           "repayments": [
             {
               "repay_id": "RP0076",
-              "repay_amount": 1500.0,
+              "repay_amount": "**",
               "repay_time": "2024-12-16",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0075",
-              "repay_amount": 2000.0,
+              "repay_amount": "**",
               "repay_time": "2024-09-30",
               "is_on_time": "否"
             },
             {
               "repay_id": "RP0074",
-              "repay_amount": 3000.0,
+              "repay_amount": "**",
               "repay_time": "2024-06-26",
               "is_on_time": "是"
             },
             {
               "repay_id": "RP0073",
-              "repay_amount": 5000.0,
+              "repay_amount": "**",
               "repay_time": "2024-03-08",
               "is_on_time": "是"
             }
@@ -193,7 +193,7 @@
               "overdue_id": "O0073",
               "loan_id": "L0049",
               "loan_type": "信用卡分期",
-              "overdue_amount": 15000.0,
+              "overdue_amount": "**",
               "overdue_days": 365,
               "overdue_periods": 6,
               "last_repay_date": "2024-10-20",
@@ -204,7 +204,7 @@
               "overdue_id": "O0074",
               "loan_id": "L0050",
               "loan_type": "现金贷",
-              "overdue_amount": 9000.0,
+              "overdue_amount": "**",
               "overdue_days": 240,
               "overdue_periods": 6,
               "last_repay_date": "2025-02-22",
@@ -215,7 +215,7 @@
               "overdue_id": "O0075",
               "loan_id": "L0051",
               "loan_type": "消费贷",
-              "overdue_amount": 4500.0,
+              "overdue_amount": "**",
               "overdue_days": 90,
               "overdue_periods": 3,
               "last_repay_date": "2025-07-22",
@@ -226,7 +226,7 @@
               "overdue_id": "O0076",
               "loan_id": "L0051",
               "loan_type": "消费贷",
-              "overdue_amount": 900.0,
+              "overdue_amount": "**",
               "overdue_days": 30,
               "overdue_periods": 1,
               "last_repay_date": "2025-07-22",
@@ -234,7 +234,7 @@
               "owner_conflict": false
             }
           ],
-          "total_amount": 29400.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 O0073（信用卡分期，逾期365天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": []
@@ -369,7 +369,7 @@
       "detail": {
         "mode": "催收对话模式",
         "pack": "consumer_finance",
-        "session_id": "S-c22b62cc"
+        "session_id": "S-54aba5b2"
       },
       "ms": 0
     },
@@ -403,7 +403,7 @@
           "next_node": null
         }
       },
-      "ms": 779
+      "ms": 800
     },
     {
       "step": "understand",
@@ -455,7 +455,7 @@
               "overdue_id": "O0073",
               "loan_id": "L0049",
               "loan_type": "信用卡分期",
-              "overdue_amount": 15000.0,
+              "overdue_amount": "**",
               "overdue_days": 365,
               "overdue_periods": 6,
               "last_repay_date": "2024-10-20",
@@ -466,7 +466,7 @@
               "overdue_id": "O0074",
               "loan_id": "L0050",
               "loan_type": "现金贷",
-              "overdue_amount": 9000.0,
+              "overdue_amount": "**",
               "overdue_days": 240,
               "overdue_periods": 6,
               "last_repay_date": "2025-02-22",
@@ -477,7 +477,7 @@
               "overdue_id": "O0075",
               "loan_id": "L0051",
               "loan_type": "消费贷",
-              "overdue_amount": 4500.0,
+              "overdue_amount": "**",
               "overdue_days": 90,
               "overdue_periods": 3,
               "last_repay_date": "2025-07-22",
@@ -488,7 +488,7 @@
               "overdue_id": "O0076",
               "loan_id": "L0051",
               "loan_type": "消费贷",
-              "overdue_amount": 900.0,
+              "overdue_amount": "**",
               "overdue_days": 30,
               "overdue_periods": 1,
               "last_repay_date": "2025-07-22",
@@ -496,7 +496,7 @@
               "owner_conflict": false
             }
           ],
-          "total_amount": 29400.0,
+          "total_amount": "**",
           "suggestion": "建议优先处理 O0073（信用卡分期，逾期365天，欠款**元）",
           "basis": "排序规则：逾期天数从高到低，欠款金额从高到低",
           "conflicts": []
@@ -559,9 +559,7 @@
                 }
               ],
               "优先建议": "建议优先处理 O0073（信用卡分期，逾期365天，欠款**元）",
-              "风险等级": "高",
-              "还款意愿": "50分（中，置信度1.0）",
-              "还款意愿等级": "中"
+              "风险等级": "高"
             },
             "对话摘要": "",
             "最近对话": []
@@ -569,11 +567,11 @@
           "rewrite_hint": ""
         },
         "output": {
-          "reply": "理解您着急，我帮您理清。您名下共4笔逾期，合计**元，风险等级为高。明细：信用卡分期逾期365天，欠款**元；现金贷逾期240天，欠款**元；消费贷逾期90天，欠款**元；消费贷逾期30天，欠款**元。建议优先处理逾期最长的信用卡分期，您是否同意？",
+          "reply": "理解您着急，我帮您逐笔说明。您名下共4笔逾期，合计**元，风险等级为高。明细：信用卡分期逾期365天，欠款**元；现金贷逾期240天，欠款**元；消费贷逾期90天，欠款**元；消费贷逾期30天，欠款**元。建议优先处理逾期天数最长的信用卡分期这笔，您看是否同意？",
           "source": "大模型"
         }
       },
-      "ms": 1199
+      "ms": 1299
     },
     {
       "step": "guard",
