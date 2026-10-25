@@ -10,7 +10,7 @@
 - 后端仓库 `AICustomerService`：新增 `backend/api/`（FastAPI）。进程内只有一个主控 Agent 实例，它持有一个运营子 Agent；进行中的催收子 Agent 按会话存在于进程内存。所有对话与写操作请求串行处理（全局锁），因为 SQLite 为单连接。
 - 前端仓库 `AICustomerService-web`：Vite + React + TypeScript + Ant Design，路由 react-router；接口类型由后端 OpenAPI 通过 `openapi-typescript` 生成。
 - 开发：Vite 把 `/api` 代理到后端 `http://127.0.0.1:8000`。
-- 部署：前端 `npm run build` 产出 `dist`，由 FastAPI 托管为单页应用，单端口访问；前端产物目录由环境变量 `WEB_DIST` 指定，默认为后端仓库同级的 `AICustomerService-web/dist`。后端仓库提供一键启动脚本。
+- 部署：前端 `npm run build` 产出 `dist`，由 FastAPI 托管为单页应用，单端口访问；前端产物目录由环境变量 `WEB_DIST` 指定，默认为后端仓库同级的 `AICustomerService-web/dist`。一键启动监听 `0.0.0.0`，本机用 `127.0.0.1`，同一局域网用本机的局域网地址。开发时代理目标仍是本机 `127.0.0.1`。
 
 ## 2. 运营回答的大模型流式生成
 
